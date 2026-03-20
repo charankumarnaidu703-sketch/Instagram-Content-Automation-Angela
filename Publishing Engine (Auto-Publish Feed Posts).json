@@ -1,0 +1,1130 @@
+{
+  "name": "Publishing Engine (Auto-Publish Feed Posts)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/15 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "38ee8278-5b6f-4238-a082-9ccf6d1aaa0b",
+      "name": "Every 15 Min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        608,
+        1280
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c75d8596-9eea-4643-aa84-5927d2cbcca5",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        608,
+        1472
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "777937db-df4a-4206-be1b-420cc6a519bd",
+      "name": "Read Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        832,
+        1376
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "options": {}
+      },
+      "id": "9cb5cb1c-b8e5-4ac2-ba48-313f5c8bc4ec",
+      "name": "Read Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1056,
+        1376
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Read Config').first().json;\nconst cal = $input.all().map(i => i.json);\n\nconst now = new Date();\nconst soon = new Date(now.getTime() + 600000); // next 10 minutes\n\nconst sd = $getWorkflowStaticData('global');\nsd.slideIds = {};\nsd.pubResults = [];\n\n// Convert Google Drive share links to direct download\nfunction driveUrl(u) {\n  const m = (u || '').match(/\\/d\\/([^/]+)/);\n  return m ? 'https://drive.google.com/uc?export=download&id=' + m[1] : u;\n}\n\n// Instagram credentials\nconst tok = cfg.igAccessToken;\nconst aid = cfg.igAccountId;\n\nif (!tok || !aid) {\n  throw new Error('Instagram credentials missing in configuration');\n}\n\n// Filter posts that should be published\nconst due = cal.filter(p => {\n\n  if (p.Status !== 'approved') return false;\n\n  if (p.Visual_Created !== true && p.Visual_Created !== 'true') return false;\n\n  if (!p.Visual_URL) return false;\n\n  if (p.Already_Published === true || p.Already_Published === 'true') return false;\n\n  const type = (p.ContentType || '').toUpperCase();\n\n  if (!['SINGLE IMAGE', 'CAROUSEL', 'REEL', 'STORY'].includes(type)) return false;\n\n  // Scheduled publishing check\n  const dt = new Date(\n    p.ScheduledDate + 'T' + (p.ScheduledTime || '11:00') + ':00'\n  );\n\n  return dt <= soon;\n});\n\n// Stop workflow if nothing is ready\nif (!due.length) {\n  return [{\n    json: { hasPosts: false },\n    pairedItem: { item: 0 }\n  }];\n}\n\n// Prepare carousel slides\nconst slides = [];\n\ndue\n  .filter(p => (p.ContentType || '').toUpperCase() === 'CAROUSEL')\n  .forEach(p => {\n\n    const urlField =\n      (p.Slide_URLs && p.Slide_URLs.trim())\n        ? p.Slide_URLs\n        : p.Visual_URL;\n\n    (urlField || '')\n      .split(',')\n      .map(u => u.trim())\n      .filter(u => u)\n      .forEach((u, i, arr) => {\n\n        slides.push({\n          postId: p.PostID,\n          slideUrl: driveUrl(u),\n          slideNum: i + 1,\n          total: arr.length\n        });\n\n      });\n\n  });\n\n// Logging (useful in production debugging)\nconsole.log('Posts ready to publish:', due.length);\nconsole.log('Carousel slides detected:', slides.length);\n\nreturn [{\n  json: {\n    hasPosts: true,\n    due: due,\n    slides: slides,\n    tok: tok,\n    aid: aid\n  },\n  pairedItem: { item: 0 }\n}];"
+      },
+      "id": "46264459-7698-44e4-a03a-0cb72382641f",
+      "name": "Filter & Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.hasPosts }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ea8c3ee4-e097-46c3-9d08-680581004a32",
+      "name": "Has Posts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1504,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Filter & Validate').first().json;\nconst due    = d.due    || [];\nconst slides = d.slides || [];\nconst results = [];\n\nfor (const p of due) {\n  const contentType = (p.ContentType || '').toUpperCase().trim();\n\n  // ════ CAROUSEL ════\n  if (contentType === 'CAROUSEL') {\n    const postSlides = slides.filter(s => s.postId === p.PostID);\n    if (postSlides.length) {\n      postSlides.forEach(x => results.push({\n        json: {\n          postId:        p.PostID,\n          contentType:   p.ContentType,\n          media_type:    'IMAGE',\n          image_url:     x.slideUrl || x.renderUrl || x.image_url || '',\n          caption:       p.Caption   || '',\n          hashtags:      p.Hashtags  || '',\n          slideNum:      x.slideNum  || x.num || '',\n          totalSlides:   postSlides.length,\n          scheduledDate: p.ScheduledDate,\n          scheduledTime: p.ScheduledTime\n        }\n      }));\n    } else {\n      results.push({ json: { skip: true, postId: p.PostID, reason: 'No slides found for carousel' } });\n    }\n  }\n\n  // ════ SINGLE IMAGE ════\n  else if (contentType === 'SINGLE IMAGE') {\n    results.push({\n      json: {\n        postId:        p.PostID,\n        contentType:   p.ContentType,\n        media_type:    'IMAGE',\n        image_url:     p.Visual_URL || '',\n        caption:       p.Caption    || '',\n        hashtags:      p.Hashtags   || '',\n        scheduledDate: p.ScheduledDate,\n        scheduledTime: p.ScheduledTime\n      }\n    });\n  }\n\n  // ════ REEL / VIDEO ════\n  else if (contentType === 'REEL' || contentType === 'VIDEO') {\n    results.push({\n      json: {\n        postId:        p.PostID,\n        contentType:   p.ContentType,\n        media_type:    'REELS',\n        video_url:     p.Visual_URL || '',\n        caption:       p.Caption    || '',\n        hashtags:      p.Hashtags   || '',\n        share_to_feed: true,\n        scheduledDate: p.ScheduledDate,\n        scheduledTime: p.ScheduledTime\n      }\n    });\n  }\n\n  // ════ STORY ════\n  else if (contentType === 'STORY') {\n    results.push({\n      json: {\n        postId:        p.PostID,\n        contentType:   p.ContentType,\n        media_type:    'STORIES',\n        image_url:     p.Visual_URL  || p.Render_URL || '',\n        video_url:     p.video_url   || '',\n        caption:       p.Caption     || '',\n        hashtags:      p.Hashtags    || '',\n        storyType:     p.StoryType   || '',\n        mainText:      p.MainText    || '',\n        supportText:   p.SupportText || '',\n        interactiveElement: p.InteractiveElement || '',\n        scheduledDate: p.ScheduledDate,\n        scheduledTime: p.ScheduledTime\n      }\n    });\n  }\n\n  // ════ UNKNOWN — skip ════\n  else {\n    results.push({\n      json: {\n        skip:        true,\n        postId:      p.PostID,\n        contentType: p.ContentType,\n        reason:      'Unknown content type — no handler defined'\n      }\n    });\n  }\n}\n\nreturn results.length ? results : [{ json: { skip: true } }];"
+      },
+      "id": "a33484c4-8dfb-4539-af2f-77531b403564",
+      "name": "Extract Slides",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e7e39c8d-d395-480a-82cb-42c9129eb533",
+      "name": "Slide Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1904,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v25.0/{{ $json.aid || $(\"Filter & Validate\").first().json.aid }}/media",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "7acdd39c-24ba-4dad-90a4-a514039aa57d",
+      "name": "Create Slide Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        768
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "id": "de659f7e-d66b-4dd5-9d86-31de16de2897",
+      "name": "Wait Slide",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2624,
+        768
+      ],
+      "webhookId": "256d3aea-95d4-41f8-9314-27e10a3b1922"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fv  = $('Filter & Validate').first().json;\nconst sd  = $getWorkflowStaticData('global');\nconst due = fv.due || [];\nconst tok = fv.tok;\nconst aid = fv.aid;\n\nconst q = [];\n\ndue.forEach(p => {\n  const cap         = (p.Caption  || '').trim() + '\\n\\n' + (p.Hashtags || '').trim();\n  const contentType = (p.ContentType || '').toUpperCase().trim();\n\n  if (contentType === 'SINGLE IMAGE') {\n    q.push({\n      contentType: 'SINGLE IMAGE',\n      postId: p.PostID,\n      body: { image_url: p.Visual_URL, caption: cap, access_token: tok },\n      hook: p.Hook,\n      aid\n    });\n\n  } else if (contentType === 'CAROUSEL') {\n    const kids = sd.slideIds[p.PostID] || [];\n    if (kids.length >= 2) {\n      q.push({\n        contentType: 'CAROUSEL',\n        postId: p.PostID,\n        body: { media_type: 'CAROUSEL', children: kids.join(','), caption: cap, access_token: tok },\n        topic: p.Topic,\n        slideCount: kids.length,\n        aid\n      });\n    } else {\n      q.push({ skip: true, postId: p.PostID, reason: `Only ${kids.length} slide IDs — need min 2` });\n    }\n\n  } else if (contentType === 'REEL') {\n    q.push({\n      contentType: 'REEL',\n      postId: p.PostID,\n      body: { media_type: 'REELS', video_url: p.Visual_URL, caption: cap, share_to_feed: true, access_token: tok },\n      hook: p.Hook,\n      aid\n    });\n\n  // ════ STORY ════ ✅\n  } else if (contentType === 'STORY') {\n    // ✅ Prefer Render_URL (S3 CDN) over Visual_URL (GitHub raw — Instagram can't fetch it)\n    const storyUrl = p.Render_URL || p.Visual_URL || '';\n\n    q.push({\n      contentType: 'STORY',\n      postId: p.PostID,\n      body: {\n        media_type:   'STORIES',\n        image_url:    storyUrl,       // ✅ S3 URL Instagram can actually fetch\n        access_token: tok\n        // ⚠️ No caption — Instagram Stories API does not support captions\n      },\n      storyType: p.StoryType || '',\n      aid\n    });\n  }\n});\n\nreturn q.length ? q.map(i => ({ json: i })) : [{ json: { empty: true } }];"
+      },
+      "id": "9268ebc7-f0e8-4137-b3ef-b94561789e53",
+      "name": "Build Publish Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "724ec190-1426-4889-82d3-6b242c309e29",
+      "name": "Publish Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2400,
+        1136
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{ $json.aid || $(\"Filter & Validate\").first().json.aid }}/media",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "ec29e835-0c37-4fba-a988-52a4aad40e3d",
+      "name": "Create Media Container",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2624,
+        992
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "id": "d73b7160-c4ed-4108-80ab-3acec9fcaeb1",
+      "name": "Wait Process",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2848,
+        960
+      ],
+      "webhookId": "0eadf206-924d-4a0c-9393-5e23927626bd"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v18.0/{{ $(\"Filter & Validate\").first().json.aid }}/media_publish",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({creation_id:$(\"Create Media Container\").first().json.id,access_token:$(\"Filter & Validate\").first().json.tok}) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "9894af21-fda5-4fa4-8102-f4e80e5f2f5c",
+      "name": "Publish Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3072,
+        960
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item=$('Publish Loop').first().json;\nif(item.empty)return[{json:{skipped:true}}];\nconst sd=$getWorkflowStaticData('global');\nconst pub=$('Publish Post').first().json;\nsd.pubResults.push({postId:item.postId,contentType:item.contentType,igPostId:pub.id||'',success:!!pub.id});\nreturn[{json:{postId:item.postId,igPostId:pub.id}}];"
+      },
+      "id": "06803871-418b-4975-b718-9f79f14ae96a",
+      "name": "Track Publish",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3296,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd=$getWorkflowStaticData('global');\nconst results=sd.pubResults||[];\nconst todayStr=new Date().toISOString().split('T')[0];\nconst cal=$('Read Calendar').all().map(i=>i.json);\nconst stories=cal.filter(p=>p.ContentType==='story'&&p.ScheduledDate===todayStr);\nconst ok=results.filter(r=>r.success).length;\nconst total=results.length;\nconst lines=results.map(r=>(r.success?'✅':'❌')+' '+r.contentType+': '+r.postId);\nconst storyInfo=stories.length?'\\n📱 '+stories.length+' stories due today - check reminders':'';\nconst msg='📤 *Publishing Report*\\n'+lines.join('\\n')+storyInfo;\nconst updates=[];\nresults.forEach(r=>{\n  if(r.success)updates.push({PostID:r.postId,Status:'published',Already_Published:'true',Published_At:new Date().toISOString(),Instagram_Post_ID:r.igPostId});\n});\nreturn[{json:{msg,updates,stories,total,ok,failed:total-ok,date:todayStr,ts:new Date().toISOString()}}];"
+      },
+      "id": "ad219238-c222-471f-aab5-2556cdedad60",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        1152
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.updates[0].PostID }}",
+            "Instagram_Post_ID": "={{ $json.updates[0].Instagram_Post_ID }}",
+            "Published_At": "={{ $json.updates[0].Published_At }}",
+            "Already_Published": "={{ $json.updates[0].Already_Published }}",
+            "Status": "={{ $json.updates[0].Status }}"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ContentType",
+              "displayName": "ContentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ScheduledDate",
+              "displayName": "ScheduledDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ScheduledTime",
+              "displayName": "ScheduledTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Preferred Template",
+              "displayName": "Preferred Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "VisualBrief",
+              "displayName": "VisualBrief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SlideText",
+              "displayName": "SlideText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SlideDetails",
+              "displayName": "SlideDetails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SceneBreakdown",
+              "displayName": "SceneBreakdown",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "StoryType",
+              "displayName": "StoryType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "MainText",
+              "displayName": "MainText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SupportText",
+              "displayName": "SupportText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Background",
+              "displayName": "Background",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "InteractiveElement",
+              "displayName": "InteractiveElement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "LinkSticker",
+              "displayName": "LinkSticker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "FeedPostConnection",
+              "displayName": "FeedPostConnection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "StickerSuggestions",
+              "displayName": "StickerSuggestions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pillar",
+              "displayName": "Pillar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NeedsReview",
+              "displayName": "NeedsReview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ReviewFlags",
+              "displayName": "ReviewFlags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "AISource",
+              "displayName": "AISource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CreatedAt",
+              "displayName": "CreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Visual_URL",
+              "displayName": "Visual_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Visual_Created",
+              "displayName": "Visual_Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Slide_URLs",
+              "displayName": "Slide_URLs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Already_Published",
+              "displayName": "Already_Published",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Published_At",
+              "displayName": "Published_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Instagram_Post_ID",
+              "displayName": "Instagram_Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7dc29ae8-52a9-4890-8a05-84171477a5b8",
+      "name": "Update Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2848,
+        1152
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "lordshivavishnu357@gmail.com",
+        "subject": "=Publishing Report - {{ $json.date }}",
+        "emailType": "text",
+        "message": "={{ $json.msg }}",
+        "options": {}
+      },
+      "id": "a71bfb52-7589-427d-843c-70e8f5cead99",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3072,
+        1152
+      ],
+      "webhookId": "2e7d3de7-0124-4ff9-ab4c-b0eaf19acac3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZZoOsjL4CVOsU0V6",
+          "name": "Charan Gmail Oauth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Publishing Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "Published": "={{ $json.ok }}",
+            "Failed": "={{ $json.failed }}",
+            "Total": "={{ $json.total }}",
+            "Timestamp": "={{ $json.ts }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "3186b5aa-e8bf-4ebe-82ad-490ed6b40967",
+      "name": "Update Pub Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3296,
+        1200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "76d33b73-2c59-4c2b-9665-d47cd97f9973",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        1376
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;\nif(d.skip)return[{json:{skipped:true}}];\nconst sd=$getWorkflowStaticData('global');\nconst pid=$('Slide Loop').first().json.postId;\nconst cid=$('Create Slide Container').first().json.id;\nif(!sd.slideIds[pid])sd.slideIds[pid]=[];\nsd.slideIds[pid].push(cid);\nreturn[{json:{postId:pid,slideId:cid}}];"
+      },
+      "id": "b918fc6b-27ca-4bbb-be7b-4424638b4e31",
+      "name": "Track Slide",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item        = $input.first().json;\nconst tok         = $('Filter & Validate').first().json.tok;\nconst contentType = (item.contentType || '').toUpperCase().trim();\n\nconst hashtags    = (item.hashtags || '').trim();\nconst captionOnly = (item.caption  || '').trim();\nconst fullCaption = hashtags\n  ? `${captionOnly}\\n\\n${hashtags}`\n  : captionOnly;\n\nlet body = {};\n\n// ════ SINGLE IMAGE ════\nif (contentType === 'SINGLE IMAGE') {\n  body = {\n    image_url:    item.image_url,\n    caption:      fullCaption,\n    access_token: tok\n  };\n}\n// ════ CAROUSEL SLIDE ════\nelse if (contentType === 'CAROUSEL') {\n  body = {\n    image_url:        item.image_url,\n    is_carousel_item: true,\n    access_token:     tok\n  };\n}\n// ════ REEL / VIDEO ════\nelse if (contentType === 'REEL' || contentType === 'VIDEO') {\n  body = {\n    media_type:    'REELS',\n    video_url:     item.video_url,\n    caption:       fullCaption,\n    share_to_feed: true,\n    access_token:  tok\n  };\n}\n// ════ STORY ════✅\n// ════ STORY ════\nelse if (contentType === 'STORY') {\n  // ✅ FIX: story rows store the URL in Visual_URL or Render_URL, not image_url\n  const storyImageUrl = item.image_url\n    || item.Visual_URL\n    || item.Render_URL\n    || '';\n\n  if (item.video_url) {\n    body = {\n      media_type:   'STORIES',\n      video_url:    item.video_url,\n      access_token: tok\n    };\n  } else {\n    body = {\n      media_type:   'STORIES',\n      image_url:    storyImageUrl,\n      access_token: tok\n    };\n  }\n}\n\nreturn [{\n  json: {\n    body:        JSON.stringify(body),\n    postId:      item.postId      || item.PostID,\n    contentType: item.contentType,\n    fullCaption: fullCaption\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2176,
+        768
+      ],
+      "id": "99d57c73-945e-46ae-98ce-541a420beffc",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every 15 Min": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Config": {
+      "main": [
+        [
+          {
+            "node": "Read Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar": {
+      "main": [
+        [
+          {
+            "node": "Filter & Validate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Validate": {
+      "main": [
+        [
+          {
+            "node": "Has Posts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Posts?": {
+      "main": [
+        [
+          {
+            "node": "Extract Slides",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Slides": {
+      "main": [
+        [
+          {
+            "node": "Slide Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slide Loop": {
+      "main": [
+        [
+          {
+            "node": "Build Publish Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Slide Container": {
+      "main": [
+        [
+          {
+            "node": "Wait Slide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Slide": {
+      "main": [
+        [
+          {
+            "node": "Track Slide",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Publish Queue": {
+      "main": [
+        [
+          {
+            "node": "Publish Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Loop": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Media Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Media Container": {
+      "main": [
+        [
+          {
+            "node": "Wait Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Process": {
+      "main": [
+        [
+          {
+            "node": "Publish Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Post": {
+      "main": [
+        [
+          {
+            "node": "Track Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Publish": {
+      "main": [
+        [
+          {
+            "node": "Publish Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Update Pub Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Pub Log": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Slide": {
+      "main": [
+        [
+          {
+            "node": "Slide Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create Slide Container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bff09bf7-3390-4e5e-b592-68cc114ebbee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9301a0d2cb4f0d3ce4f42b58554435fa7b894db5f60eb53bd5117fd5b924b581"
+  },
+  "id": "p1xZrG1nGy1afjEb",
+  "tags": []
+}

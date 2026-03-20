@@ -1,0 +1,2353 @@
+{
+  "name": "Content Planning Engine (Weekly - 21 Pieces)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0789a6c8-418c-44e2-b66e-c879dd9d7784",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3712,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "9658c645-59ca-4441-8855-a41ab41caf3e",
+      "name": "Sunday 7PM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3712,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2064165982,
+          "mode": "list",
+          "cachedResultName": "Content Archieve",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=2064165982"
+        },
+        "options": {}
+      },
+      "id": "5f92fbfe-e608-4934-ba83-f0d11f26f2c1",
+      "name": "Read Archive",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -3264,
+        208
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 376209861,
+          "mode": "list",
+          "cachedResultName": "Analytics Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=376209861"
+        },
+        "options": {}
+      },
+      "id": "0c37c81e-61ca-4d05-907b-e76bbf1ec002",
+      "name": "Read Analytics",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -3040,
+        208
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 143028096,
+          "mode": "list",
+          "cachedResultName": "Sheet13",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=143028096"
+        },
+        "options": {}
+      },
+      "id": "8829e256-a1e8-4e90-bd58-31c1cb3e020d",
+      "name": "Read Products",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2816,
+        208
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  UPGRADED CODE NODE — Angela Italy Instagram Workflow\n//  Improvements: Data Validation + Richer Analytics +\n//  Smarter Prompt + Performance Archive + Quality Gate\n// ============================================================\n\n\n// ================= SECTION 1: CONFIG =================\n\nlet sheetCfg = {};\ntry {\n  const rows = $('Read Config1').all();\n  for (const r of rows) {\n    const key = r.json[\"Header Name\"];\n    const val = r.json[\"Example Value\"];\n    if (key) sheetCfg[key] = val;\n  }\n} catch (e) {}\n\nconst d = {\n  brandName:        $('Read Config1').first().json.brandName,\n  tone:     $('Read Config1').first().json.tone        ,\n  audience: $('Read Config1').first().json.audience ,\n  contentpillars:$('Read Config1').first().json.contentPillars,\n  contentlanguage:$('Read Config1').first().json[\"Content Language\"],\n  blacklistWords: $('Read Config1').first().json.blacklistWords  ,\n  captionstartegy:$('Read Config1').first().json[\"Caption Strategy\"],\n  minCaptionWords:  $('Read Config1').first().json.minCaptionWords,\n  maxCaptionWords: $('Read Config1').first().json.maxCaptionWords ,\n  maxHookChars:    $('Read Config1').first().json.maxHookChars ,\n  minHashtags:      $('Read Config1').first().json.minHashtags,\n  maxHashtags:     $('Read Config1').first().json.maxHashtags ,\n  feedPostTime:     $('Read Config1').first().json.feedPostTime,\n  morningStoryTime: $('Read Config1').first().json.morningStoryTime,\n  eveningStoryTime: $('Read Config1').first().json.eveningStoryTime,\n  bannedHashtags:  $('Read Config1').first().json.bannedHashtags ,\n  colorPalette:     ''\n};\n\nconst cfg = { ...d, ...sheetCfg };\ncfg.minCaptionWords = Number(cfg.minCaptionWords);\ncfg.maxCaptionWords = Number(cfg.maxCaptionWords);\ncfg.maxHookChars    = Number(cfg.maxHookChars);\ncfg.minHashtags     = Number(cfg.minHashtags);\ncfg.maxHashtags     = Number(cfg.maxHashtags);\n\nconst blacklistArr = cfg.blacklistWords\n  ? cfg.blacklistWords.split(',').map(w => w.trim().toLowerCase()).filter(Boolean)\n  : [];\n\n\n// ================= SECTION 2: HELPER FUNCTIONS =================\n\n/**\n * Parses M/D/YYYY and YYYY-MM-DD date formats safely.\n */\nconst parseDate = (str) => {\n  if (!str || typeof str !== 'string') return null;\n  str = str.trim();\n  if (str.includes('/')) {\n    const [m, d, y] = str.split('/');\n    if (!m || !d || !y) return null;\n    const dt = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`);\n    return isNaN(dt.getTime()) ? null : dt;\n  }\n  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(str)) {\n    const dt = new Date(str);\n    return isNaN(dt.getTime()) ? null : dt;\n  }\n  return null;\n};\n\n/**\n * Normalizes EngagementRate — handles both 0.125 and 12.5 formats.\n */\nconst safeEngagement = (val) => {\n  const n = parseFloat(val);\n  if (isNaN(n) || n < 0) return 0;\n  return n > 1 ? n / 100 : n;\n};\n\n/**\n * Returns a numeric value or 0 if the value is non-numeric / Excel artifact.\n */\nconst safeNum = (val) => {\n  const n = Number(val);\n  return isNaN(n) ? 0 : n;\n};\n\n/**\n * Validates a single analytics row.\n * Returns null if the row is too corrupt to use.\n */\nconst validateAnalyticsRow = (j) => {\n  let issues = 0;\n\n  const date     = parseDate(j.PostDate);\n  const engRate  = safeEngagement(j.EngagementRate);\n  const shares   = safeNum(j.Shares);\n  const saves    = safeNum(j.Saves);\n  const likes    = safeNum(j.Likes);\n  const comments = safeNum(j.Comments);\n  const reach    = safeNum(j.Reach);\n\n  // Count critical empty fields\n  if (!date)           issues++;\n  if (!j.ContentType)  issues++;\n  if (!j.Topic)        issues++;\n  if (!j.HookStyle)    issues++;  // missing but recoverable\n\n  // Reject rows with more than 2 critical issues\n  if (issues > 2) return null;\n\n  return {\n    ...j,\n    _parsedDate:    date,\n    EngagementRate: engRate,\n    Shares:         shares,\n    Saves:          saves,\n    Likes:          likes,\n    Comments:       comments,\n    Reach:          reach,\n    HookStyle:      j.HookStyle || 'Unknown',\n    ContentType:    j.ContentType || 'Unknown',\n    // ── NEW enriched fields ──\n    CaptionLength:  safeNum(j.CaptionLength),   // word count — add this column to sheet\n    PostingHour:    safeNum(j.PostingHour),      // 0-23 — add this column to sheet\n    HashtagCount:   safeNum(j.HashtagCount),     // number of hashtags — add to sheet\n    HasCTA:         j.CallToAction === 'Yes',    // Yes/No column — add to sheet\n    ProductFeatured:j.ProductFeatured || 'None'  // product name — add to sheet\n  };\n};\n\n\n// ================= SECTION 3: SMART ARCHIVE =================\n\nlet pastTopics = '';\nlet archiveInsight = '';\n\ntry {\n  const archiveRows = $('Read Archive').all().slice(-30);\n\n  // Build topic list for avoidance\n  pastTopics = archiveRows\n    .map(i => i.json.Topic || '')\n    .filter(Boolean)\n    .join(', ');\n\n  // Build performance memory — distinguish good vs bad past topics\n  const goodTopics = archiveRows\n    .filter(i => safeEngagement(i.json.EngagementRate) >= 0.05)  // 5%+ = good\n    .map(i => i.json.Topic)\n    .filter(Boolean);\n\n  const badTopics = archiveRows\n    .filter(i => safeEngagement(i.json.EngagementRate) > 0 && safeEngagement(i.json.EngagementRate) < 0.02)\n    .map(i => i.json.Topic)\n    .filter(Boolean);\n\n  // Feed insight to AI\n  if (goodTopics.length > 0 || badTopics.length > 0) {\n    archiveInsight = `ARCHIVE PERFORMANCE MEMORY:\nHigh-performing past topics (explore adjacent ideas): ${goodTopics.slice(0,5).join(', ') || 'None'}\nLow-performing past topics (avoid these angles): ${badTopics.slice(0,5).join(', ') || 'None'}\nINSTRUCTION: Generate topics adjacent to high-performers. Never revisit low-performers.`;\n  }\n\n} catch (e) {}\n\n\n// ================= SECTION 4: ANALYTICS WITH DATA VALIDATION =================\n\nlet an = 'No historical data — use best practices for hook style, format, and topic selection.';\n\ntry {\n  const r = $('Read Analytics').all();\n\n  if (r.length > 0) {\n\n    const cutoff = new Date();\n    cutoff.setDate(cutoff.getDate() - 30);\n\n    // Validate + sanitize every row\n    const cleaned = r\n      .map(i => validateAnalyticsRow(i.json))\n      .filter(j => j !== null && j._parsedDate && j._parsedDate >= cutoff)\n      .sort((a, b) => b.EngagementRate - a.EngagementRate);\n\n    if (cleaned.length === 0) {\n      an = 'No valid data in last 30 days — use best practices.';\n    } else {\n\n      const total = cleaned.length;\n\n      // ── Avg engagement ──\n      const avgEng = (cleaned.reduce((s, j) => s + j.EngagementRate, 0) / total * 100).toFixed(1);\n\n      // ── Best content type ──\n      const typeMap = {};\n      cleaned.forEach(j => { typeMap[j.ContentType] = (typeMap[j.ContentType] || 0) + 1; });\n      const bestType = Object.entries(typeMap).sort((a,b) => b[1]-a[1])[0]?.[0] || 'N/A';\n\n      // ── Best hook style ──\n      const hookMap = {};\n      cleaned.forEach(j => { hookMap[j.HookStyle] = (hookMap[j.HookStyle] || 0) + 1; });\n      const bestHook = Object.entries(hookMap).sort((a,b) => b[1]-a[1])[0]?.[0] || 'N/A';\n\n      // ── Best posting hour ──\n      const hourMap = {};\n      cleaned.forEach(j => {\n        if (j.PostingHour > 0) {\n          hourMap[j.PostingHour] = (hourMap[j.PostingHour] || 0) + j.EngagementRate;\n        }\n      });\n      const bestHour = Object.entries(hourMap).sort((a,b) => b[1]-a[1])[0]?.[0] || 'N/A';\n\n      // ── Optimal caption length ──\n      const captionLengths = cleaned.filter(j => j.CaptionLength > 0);\n      const avgCaptionLen = captionLengths.length > 0\n        ? Math.round(captionLengths.reduce((s,j) => s + j.CaptionLength, 0) / captionLengths.length)\n        : 0;\n\n      // ── CTA impact ──\n      const withCTA    = cleaned.filter(j => j.HasCTA);\n      const withoutCTA = cleaned.filter(j => !j.HasCTA);\n      const ctaEngAvg  = withCTA.length > 0\n        ? (withCTA.reduce((s,j) => s + j.EngagementRate, 0) / withCTA.length * 100).toFixed(1)\n        : null;\n      const noCTAEngAvg = withoutCTA.length > 0\n        ? (withoutCTA.reduce((s,j) => s + j.EngagementRate, 0) / withoutCTA.length * 100).toFixed(1)\n        : null;\n      const ctaInsight = (ctaEngAvg && noCTAEngAvg)\n        ? `CTAs: ${ctaEngAvg}% eng WITH vs ${noCTAEngAvg}% WITHOUT → ${parseFloat(ctaEngAvg) > parseFloat(noCTAEngAvg) ? 'ALWAYS include CTA' : 'CTA has no clear benefit'}`\n        : '';\n\n      // ── Optimal hashtag count ──\n      const hashtagData = cleaned.filter(j => j.HashtagCount > 0);\n      const avgHashtags = hashtagData.length > 0\n        ? Math.round(hashtagData.reduce((s,j) => s + j.HashtagCount, 0) / hashtagData.length)\n        : 0;\n\n      // ── Best product ──\n      const prodEngMap = {};\n      const prodCountMap = {};\n      cleaned.forEach(j => {\n        if (j.ProductFeatured && j.ProductFeatured !== 'None') {\n          prodEngMap[j.ProductFeatured]   = (prodEngMap[j.ProductFeatured]   || 0) + j.EngagementRate;\n          prodCountMap[j.ProductFeatured] = (prodCountMap[j.ProductFeatured] || 0) + 1;\n        }\n      });\n      const bestProduct = Object.entries(prodEngMap)\n        .map(([k, v]) => ({ name: k, avg: v / prodCountMap[k] }))\n        .sort((a, b) => b.avg - a.avg)[0]?.name || 'N/A';\n\n      // ── Top 5 posts ──\n      const top5 = cleaned.slice(0, 5).map(j =>\n        `\"${j.Topic}\"(${j.ContentType}, Hook:${j.HookStyle}, E:${(j.EngagementRate*100).toFixed(1)}%, Saves:${j.Saves}, Shares:${j.Shares})`\n      ).join('\\n  → ');\n\n      // ── Build structured analytics prompt ──\n      an = `\nANALYTICS SUMMARY (last 30 days, ${total} validated posts):\n\nPERFORMANCE STATS:\n- Avg Engagement Rate: ${avgEng}%\n- Best Content Format: ${bestType}\n- Best Hook Style: ${bestHook}\n- Best Posting Hour: ${bestHour}:00\n- Optimal Caption Length: ${avgCaptionLen > 0 ? avgCaptionLen + ' words' : 'Not enough data'}\n- Optimal Hashtag Count: ${avgHashtags > 0 ? avgHashtags : 'Not enough data'}\n- Best Performing Product: ${bestProduct}\n${ctaInsight ? '- ' + ctaInsight : ''}\n\nTOP 5 POSTS (highest engagement):\n  → ${top5}\n\nAI REASONING INSTRUCTIONS (follow these steps before generating each post):\nSTEP 1 — Identify which 2 hook patterns from top posts you will replicate and state them.\nSTEP 2 — Identify which content format drove the most saves and use it for at least 2 posts.\nSTEP 3 — Identify which topic category drove the most shares and create at least 1 post in that category.\nSTEP 4 — Generate each post deliberately replicating the patterns found in steps 1-3.\nSTEP 5 — For each post in your JSON output, add an \"analyticsInsight\" field explaining which data point you applied.\n      `.trim();\n    }\n  }\n} catch(e) {\n  an = 'Analytics unavailable — use best practices.';\n}\n\n\n// ================= SECTION 4.5: SMART LEARNING ENGINE =================\n// Reads Template Performance sheet to dynamically allocate content formats\n// and prefer better-performing templates\n\nlet smartAllocation = '';\nlet templatePreferences = '';\nlet dynamicFormatSplit = {\n  singleImage: 3,\n  carousel: 2,\n  reel: 2\n};\n\ntry {\n  const perfData = $('Read Template Performance').all().map(i => i.json);\n  \n  if (perfData.length > 0) {\n    // Calculate average performance score per content type\n    const typeScores = {};\n    const typeCounts = {};\n    \n    perfData.forEach(p => {\n      const ct = (p.ContentType || '').toLowerCase();\n      const score = Number(p.PerformanceScore) || 0;\n      if (ct && score > 0) {\n        typeScores[ct] = (typeScores[ct] || 0) + score;\n        typeCounts[ct] = (typeCounts[ct] || 0) + 1;\n      }\n    });\n    \n    // Average scores per type\n    const avgScores = {};\n    for (const [type, total] of Object.entries(typeScores)) {\n      avgScores[type] = total / typeCounts[type];\n    }\n    \n    // Dynamic format allocation (weighted by performance)\n    const siScore = avgScores['single_image'] || avgScores['image'] || 1;\n    const carScore = avgScores['carousel'] || 1;\n    const reelScore = avgScores['reel'] || 1;\n    const totalScore = siScore + carScore + reelScore;\n    \n    if (totalScore > 3) { // Only use dynamic allocation if we have real data\n      dynamicFormatSplit.carousel = Math.max(1, Math.min(4, Math.round(7 * carScore / totalScore)));\n      dynamicFormatSplit.reel = Math.max(1, Math.min(4, Math.round(7 * reelScore / totalScore)));\n      dynamicFormatSplit.singleImage = 7 - dynamicFormatSplit.carousel - dynamicFormatSplit.reel;\n      // Ensure minimum 1 of each\n      if (dynamicFormatSplit.singleImage < 1) {\n        dynamicFormatSplit.singleImage = 1;\n        dynamicFormatSplit.carousel = Math.min(dynamicFormatSplit.carousel, 3);\n        dynamicFormatSplit.reel = 7 - dynamicFormatSplit.singleImage - dynamicFormatSplit.carousel;\n      }\n      \n      smartAllocation = `\\nSMART FORMAT ALLOCATION (data-driven from template performance):\n- Single Images: ${dynamicFormatSplit.singleImage} posts (performance score: ${siScore.toFixed(1)})\n- Carousels: ${dynamicFormatSplit.carousel} posts (performance score: ${carScore.toFixed(1)})\n- Reels: ${dynamicFormatSplit.reel} posts (performance score: ${reelScore.toFixed(1)})\nNOTE: This allocation is based on real engagement data. Prioritize the higher-scoring formats.\\n`;\n    }\n    \n    // Get top performing templates per content type + pillar\n    const templateRankings = perfData\n      .filter(p => Number(p.PerformanceScore) > 0)\n      .sort((a, b) => Number(b.PerformanceScore) - Number(a.PerformanceScore))\n      .slice(0, 10);\n    \n    if (templateRankings.length > 0) {\n      const topTemplates = templateRankings\n        .map(t => `- ${t.ContentType}/${t.Pillar}: Template \"${t.TemplateName || t.TemplateID}\" (score: ${Number(t.PerformanceScore).toFixed(1)}, used ${t.TimesUsed || 0} times)`)\n        .join('\\n');\n      \n      // Get worst performing templates to avoid\n      const worstTemplates = perfData\n        .filter(p => Number(p.PerformanceScore) > 0 && Number(p.TimesUsed) >= 2)\n        .sort((a, b) => Number(a.PerformanceScore) - Number(b.PerformanceScore))\n        .slice(0, 3)\n        .map(t => `- AVOID \"${t.TemplateName || t.TemplateID}\" for ${t.ContentType} (score: ${Number(t.PerformanceScore).toFixed(1)})`)\n        .join('\\n');\n      \n      templatePreferences = `\\nTEMPLATE PERFORMANCE PREFERENCES (use this to guide visual direction):\nTOP PERFORMERS:\n${topTemplates}\n${worstTemplates ? '\\nWEAK PERFORMERS (avoid these styles):\\n' + worstTemplates : ''}\nINSTRUCTION: Match your visual direction and content style to the top-performing templates.\\n`;\n    }\n  }\n} catch(e) {\n  // Template performance data not available yet — use defaults\n}\n\n\n// ================= SECTION 5: PRODUCTS =================\n\nlet prodList = '';\nlet prodArr  = [];\n\ntry {\n  const prods = $('Read Products').all().map(i => i.json)\n    .filter(p => p.Status === 'Active' || p.Status === 'Seasonal');\n\n  prods.sort((a, b) => {\n    const pri = { High: 0, Medium: 1, Low: 2 };\n    return (pri[a.Priority] || 1) - (pri[b.Priority] || 1);\n  });\n\n  prodArr = prods;\n\n  if (prods.length > 0) {\n    prodList = '\\n\\nPRODUCTS & SERVICES TO FEATURE:\\n';\n    prods.forEach((p, i) => {\n      prodList += `${i+1}. ${p.Name} (${p.Category})\\n`;\n      prodList += `Description: ${p.Description}\\n`;\n      prodList += `Key Benefits: ${p.KeyBenefits || ''}\\n`;\n      prodList += `Content Angle: ${p.ContentAngle || 'Educational'}\\n`;\n      prodList += `Sample Hook: ${p.SampleHook || ''}\\n`;\n      prodList += `Promotion Style: ${p.PromotionStyle || 'Educational'}\\n`;\n      prodList += `Do NOT Say: ${p.DoNotSay || ''}\\n`;\n      prodList += `Target Audience: ${p.TargetAudience || cfg.audience}\\n`;\n      prodList += `Price: ${p.Price || ''}\\n\\n`;\n    });\n  }\n} catch(e) {}\n\n\n// ================= SECTION 6: PROMPTS =================\n\nconst sys = `You are a senior social media strategist for ${cfg.brandName}.\nTone: ${cfg.tone}.\nTarget Audience: ${cfg.audience}.\nNEVER use these words or phrases: ${cfg.blacklistWords || 'none'}.\n\nYour job is not just to generate content — it is to ANALYZE past performance data first, identify what patterns drove the highest engagement, saves and shares, then deliberately replicate those patterns in every piece of content you create.\n\nRESPOND ONLY WITH A VALID JSON ARRAY. No explanations outside the JSON.`;\n\nconst fp = `\nGenerate 7 Instagram feed posts for next week as a JSON array.\n\nFORMAT SPLIT:\n- 3 SINGLE IMAGE posts (Monday, Thursday, Sunday)\n- 2 CAROUSEL posts (Tuesday, Friday)\n- 2 REELS posts (Wednesday, Saturday)\n\nContent Pillar Balance: ${cfg.contentPillars}\nCaption Length: ${cfg.minCaptionWords}–${cfg.maxCaptionWords} words\nHook Max Characters: ${cfg.maxHookChars}\nHashtags per post: ${cfg.minHashtags}–${cfg.maxHashtags}\n\nAVOID THESE PAST TOPICS (already posted): ${pastTopics || 'None yet'}\n\n${archiveInsight}\n\n${an}\n\n${prodList}\n\nREQUIRED JSON FIELDS FOR EACH POST:\n{\n  \"day\": \"Monday\",\n  \"format\": \"SINGLE IMAGE | CAROUSEL | REEL\",\n  \"pillar\": \"Education | Inspiration | Promotion\",\n  \"topic\": \"...\",\n  \"hook\": \"... (max ${cfg.maxHookChars} chars)\",\n  \"caption\": \"... (${cfg.minCaptionWords}–${cfg.maxCaptionWords} words)\",\n  \"hashtags\": [\"...\", \"...\"],\n  \"callToAction\": \"...\",\n  \"visualDirection\": \"...\",\n  \"productFeatured\": \"Product name or None\",\n  \"analyticsInsight\": \"Which past data pattern this post replicates and why\"\n}\n\nReturn ONLY the JSON array. No text before or after.\n`.trim();\n\n\n// ================= SECTION 7: QUALITY GATE =================\n\n/**\n * Validates a single generated post against config rules.\n * Returns array of violation strings (empty = passed).\n */\nconst validatePost = (post) => {\n  const violations = [];\n\n  // Hook length\n  if (post.hook && post.hook.length > cfg.maxHookChars) {\n    violations.push(`Hook too long: ${post.hook.length} chars (max ${cfg.maxHookChars})`);\n  }\n\n  // Caption word count\n  if (post.caption) {\n    const wordCount = post.caption.trim().split(/\\s+/).length;\n    if (wordCount < cfg.minCaptionWords) violations.push(`Caption too short: ${wordCount} words (min ${cfg.minCaptionWords})`);\n    if (wordCount > cfg.maxCaptionWords) violations.push(`Caption too long: ${wordCount} words (max ${cfg.maxCaptionWords})`);\n  }\n\n  // Hashtag count\n  if (post.hashtags) {\n    if (post.hashtags.length < cfg.minHashtags) violations.push(`Too few hashtags: ${post.hashtags.length} (min ${cfg.minHashtags})`);\n    if (post.hashtags.length > cfg.maxHashtags) violations.push(`Too many hashtags: ${post.hashtags.length} (max ${cfg.maxHashtags})`);\n  }\n\n  // Blacklist words in caption + hook\n  const fullText = `${post.hook || ''} ${post.caption || ''}`.toLowerCase();\n  blacklistArr.forEach(word => {\n    if (fullText.includes(word)) violations.push(`Blacklisted word found: \"${word}\"`);\n  });\n\n  // Missing critical fields\n  ['day','format','topic','hook','caption','hashtags','callToAction'].forEach(field => {\n    if (!post[field]) violations.push(`Missing required field: \"${field}\"`);\n  });\n\n  return violations;\n};\n\n\n// ================= SECTION 8: OUTPUT =================\n\nconst oai = JSON.stringify({\n  model:      'gpt-4',\n  messages:   [\n    { role: 'system', content: sys },\n    { role: 'user',   content: fp  }\n  ],\n  temperature: 0.7,\n  max_tokens:  4000\n});\n\nconst gem = JSON.stringify({\n  contents: [{ parts: [{ text: sys + '\\n\\n' + fp }] }],\n  generationConfig: { temperature: 0.7, maxOutputTokens: 4000 }\n});\n\nreturn [{\n  json: {\n    // AI request bodies\n    openAiBody:       oai,\n    geminiBody:       gem,\n\n    // Config & context (for downstream nodes)\n    config:           cfg,\n    pastTopics:       pastTopics,\n    archiveInsight:   archiveInsight,\n    systemPrompt:     sys,\n    userPrompt:       fp,\n    products:         prodArr,\n    dynamicFormatSplit: dynamicFormatSplit,\n    smartAllocation:  smartAllocation,\n    templatePreferences: templatePreferences,\n\n    // Quality gate function (serialised for reference — call in a downstream Code Node)\n    qualityGateInfo: `\nAfter AI generates posts, add a Code Node that:\n1. Parses the AI JSON response\n2. Runs each post through the validatePost logic\n3. Tags posts with violations as needsReview: true\n4. Only auto-posts items where needsReview: false\n    `.trim(),\n\n    // Inline quality gate validator (use in downstream node)\n    validatorLogic: validatePost.toString()\n  }\n}];"
+      },
+      "id": "1f5b49a1-b3e6-4b46-8a16-46b2d8d646df",
+      "name": "Build Feed Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2592,
+        208
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.openAiBody }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "fefce2d1-b36b-4fb9-bc5d-c8f49af94698",
+      "name": "Feed - OpenAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2304,
+        208
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Build Feed Prompt').first().json.geminiBody }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "f836fa42-0ec6-4952-a663-1b1226a99fbe",
+      "name": "Feed - Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2144,
+        320
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg=$('Build Feed Prompt').first().json.config;\nconst days=[{d:'Monday',t:'single_image',p:'Education'},{d:'Tuesday',t:'carousel',p:'Inspiration'},{d:'Wednesday',t:'reel',p:'Promotion'},{d:'Thursday',t:'single_image',p:'Education'},{d:'Friday',t:'carousel',p:'Inspiration'},{d:'Saturday',t:'reel',p:'Education'},{d:'Sunday',t:'single_image',p:'Promotion'}];\nconst feedPosts=days.map(({d,t,p})=>({postType:t,scheduledDay:d,topic:p+' '+t+' - [MANUAL EDIT]',hook:'[EDIT] Scroll-stopping hook',caption:'Template for '+d+'. Brand: '+cfg.brandName+'. [MANUAL EDIT REQUIRED]',hashtags:['#content','#socialmedia','#instagram','#brand','#marketing','#creative','#engagement','#community','#growth','#strategy','#digital','#online','#trending','#viral','#inspo'],cta:'Follow for more! [EDIT]',visualBrief:'[EDIT] Visual description',slideText:t==='single_image'?'[EDIT]':'',script:t==='reel'?'[EDIT SCRIPT]':'',slideBreakdown:t==='carousel'?[{slideNum:1,title:'Cover',description:'Hook'},{slideNum:2,title:'Point 1',description:'[EDIT]'},{slideNum:3,title:'CTA',description:'Save'}]:undefined,sceneBreakdown:t==='reel'?[{scene:1,time:'0-3s',action:'Hook'},{scene:2,time:'3-15s',action:'Setup'},{scene:3,time:'15-25s',action:'Value'},{scene:4,time:'25-30s',action:'CTA'}]:undefined,pillar:p}));\nreturn[{json:{feedPosts,aiSource:'template',alertRequired:true}}];"
+      },
+      "id": "ccc4dc05-a303-4a4f-a1ce-2f5908e6c2a2",
+      "name": "Feed Templates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        448
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const inp=$input.first().json;let txt='',src='template';\nif(inp.choices){txt=inp.choices[0].message.content;src='openai'}\nelse if(inp.candidates){txt=inp.candidates[0].content.parts[0].text;src='gemini'}\nelse if(inp.feedPosts)return[{json:{...inp,feedSource:inp.aiSource||'template'}}];\nelse txt=JSON.stringify(inp);\nconst tick=String.fromCharCode(96);txt=txt.replace(new RegExp(tick+'{3}json\\\\s*','g'),'').replace(new RegExp(tick+'{3}\\\\s*','g'),'').trim();\nlet fp=JSON.parse(txt);if(!Array.isArray(fp))fp=fp.posts||[fp];\nconst cfg=$('Build Feed Prompt').first().json.config;const sys=$('Build Feed Prompt').first().json.systemPrompt;\nconst sp=`Generate 14 Instagram Stories as JSON array (2/day Mon-Sun):\\nMORNING (${cfg.morningStoryTime}) 7 stories: Poll/Question/Tip/BTS/Quote\\nEVENING (${cfg.eveningStoryTime}) 7 stories: connect to feed, drive engagement\\nFeed posts: ${fp.map(p=>(p.scheduledDay||'')+': '+(p.topic||'')).join(', ')}\\nEach: {day,timeSlot:\"AM\"/\"PM\",topic,storyType:\"Poll/Question/Image/Video/Quote/BTS\" mention type for each story,hook(max 15 chars attention-grabbing opener),mainText(max 50 chars),supportText(max 30),caption(max 100 chars engaging caption with emojis),cta(max 30 chars clear call-to-action),visualBrief(short description of visuals colors layout),background,interactiveElement:{type:\"poll/question/none\",question,options:[\"A\",\"B\"]},linkSticker,feedPostConnection,stickerSuggestions}\\nRules: max 3 polls, min 2 polls, 1+ quiz, vary types, connect PM to feed. JSON only.`;\nconst soai=JSON.stringify({model:'gpt-4',messages:[{role:'system',content:sys},{role:'user',content:sp}],temperature:0.7,max_tokens:3500});\nconst sgem=JSON.stringify({contents:[{parts:[{text:sys+'\\n\\n'+sp}]}],generationConfig:{temperature:0.7,maxOutputTokens:3500}});\nreturn[{json:{feedPosts:fp,feedSource:src,storyOpenAiBody:soai,storyGeminiBody:sgem}}];"
+      },
+      "id": "36790117-0662-4670-8c80-472e8db372a8",
+      "name": "Parse Feed & Story Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        176
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.storyOpenAiBody }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "5835cdc2-9c0d-44fd-9744-9ad9efbc793c",
+      "name": "Stories - OpenAI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1472,
+        176
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('Parse Feed & Story Prompt').first().json.storyGeminiBody }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "e6b37226-e3ce-47f3-bdfe-d4f20000b49a",
+      "name": "Stories - Gemini",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1248,
+        256
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "disabled": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg=$('Build Feed Prompt').first().json.config;const dn=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];\nconst st=['Poll','Question','Image','Quote','BTS','Tip','Video'];const stories=[];\ndn.forEach((day,i)=>{stories.push({day,timeSlot:'AM',storyType:st[i%st.length],mainText:'[EDIT] Morning '+st[i%st.length],supportText:'',background:'Brand gradient',interactiveElement:i%3===0?{type:'poll',question:'[EDIT]',options:['Yes','No']}:{type:'none'},linkSticker:'',feedPostConnection:'none',stickerSuggestions:'✨📱'});stories.push({day,timeSlot:'PM',storyType:'BTS',mainText:'[EDIT] Evening story',supportText:'',background:'Brand colors',interactiveElement:{type:'none'},linkSticker:'',feedPostConnection:'Connect to feed [EDIT]',stickerSuggestions:'🔥💡'})});\nreturn[{json:{stories,storySource:'template',alertRequired:true}}];"
+      },
+      "id": "727e11d7-ab98-40cf-8d60-9cb7e026dd46",
+      "name": "Story Templates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1024,
+        272
+      ],
+      "retryOnFail": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const inp = $input.first().json;\nlet stxt = '', ssrc = 'template';\n\nif (inp.choices) {\n  stxt = inp.choices[0].message.content;\n  ssrc = 'openai';\n} else if (inp.candidates) {\n  stxt = inp.candidates[0].content.parts[0].text;\n  ssrc = 'gemini';\n} else if (inp.stories) {\n  stxt = JSON.stringify(inp.stories);\n  ssrc = inp.storySource || 'template';\n} else {\n  stxt = JSON.stringify(inp);\n}\n\nconst tick = String.fromCharCode(96);\n\nstxt = stxt\n  .replace(new RegExp(tick + '{3}json\\\\s*', 'g'), '')\n  .replace(new RegExp(tick + '{3}\\\\s*', 'g'), '')\n  .trim();\n\nlet stories = [];\n\ntry {\n  stories = JSON.parse(stxt);\n  if (!Array.isArray(stories)) stories = stories.stories || [stories];\n} catch (e) {\n  stories = [];\n}\n\nconst fd = $('Parse Feed & Story Prompt').first().json;\nconst feedPosts = fd.feedPosts || [];\nconst fsrc = fd.feedSource || 'unknown';\n\nconst cfg = $('Build Feed Prompt').first().json.config;\n\nconst bl = (cfg.blacklistWords || '')\n  .split(',')\n  .map(w => w.trim().toLowerCase())\n  .filter(Boolean);\n\nconst bh = (cfg.bannedHashtags || '')\n  .split(',')\n  .map(h => h.trim().toLowerCase())\n  .filter(Boolean);\n\nconst now = new Date();\nconst mon = new Date(now);\nmon.setDate(now.getDate() + ((8 - now.getDay()) % 7 || 7));\n\nconst dn = [\n  'Monday',\n  'Tuesday',\n  'Wednesday',\n  'Thursday',\n  'Friday',\n  'Saturday',\n  'Sunday'\n];\n\nfunction df(day) {\n  const d = new Date(mon);\n  d.setDate(mon.getDate() + dn.indexOf(day));\n  return d.toISOString().split('T')[0];\n}\n\nfunction chk(t, tags) {\n  const f = [];\n  const l = (t || '').toLowerCase();\n\n  bl.forEach(w => {\n    if (w && l.includes(w)) f.push('Blacklisted:' + w);\n  });\n\n  (Array.isArray(tags) ? tags : []).forEach(h => {\n    if (bh.some(b => h.toLowerCase().replace('#', '') == b.replace('#', ''))) {\n      f.push('Banned tag:' + h);\n    }\n  });\n\n  return f;\n}\n\nlet flagged = 0;\nconst allRows = [];\nconst tp = { single_image: 'IMG', carousel: 'CAR', reel: 'REL' };\n\nfunction normalizeFormat(raw) {\n  const s = (raw || '').toLowerCase().trim();\n  if (s.includes('carousel')) return 'carousel';\n  if (s.includes('reel'))     return 'reel';\n  return 'single_image';\n}\n\nfeedPosts.forEach((p, i) => {\n  const day = p.scheduledDay || p.day || dn[i];\n  const ds = df(day);\n  const t = normalizeFormat(p.format || p.type || 'single_image');\n  const fl = chk(p.caption, p.hashtags);\n\n  const wc = (p.caption || '')\n    .split(/\\s+/)\n    .filter(Boolean).length;\n\n  if (t === 'single_image' && (wc < 100 || wc > 200)) fl.push('Caption:' + wc + 'w');\n  if (t !== 'single_image' && (wc < 80 || wc > 150)) fl.push('Caption:' + wc + 'w');\n\n  if ((p.hook || '').length > 100) fl.push('Hook>100');\n\n  const ht = Array.isArray(p.hashtags) ? p.hashtags : [];\n  if (ht.length < 10 || ht.length > 20) fl.push('Tags:' + ht.length);\n\n  if (t === 'reel' && !p.sceneBreakdown) fl.push('No scenes');\n\n  const nr = fl.length > 0;\n  if (nr) flagged++;\n\n  const cta             = p.callToAction    || p.cta         || '';\n  const visualBrief     = p.visualDirection || p.visualBrief || '';\n  const productFeatured = p.productFeatured || '';\n\n  allRows.push({\n    PostID: (tp[t] || 'IMG') + '-' + ds.replace(/-/g, '') + '-001',\n    ContentType: p.format || p.type || t,\n    ScheduledDate: ds,\n    ScheduledTime: cfg.feedPostTime || '11:00',\n    Day: day,\n    Topic: p.topic || '',\n    Hook: p.hook || '',\n    Caption: p.caption || '',\n    Hashtags: ht.join(' '),\n    CTA: cta,\n    VisualBrief: visualBrief,\n    ProductFeatured: productFeatured,\n    SlideText: p.slideText || '',\n    Script: p.script || '',\n    SlideDetails: JSON.stringify(p.slideBreakdown || ''),\n    SceneBreakdown: JSON.stringify(p.sceneBreakdown || ''),\n    StoryType: '',\n    MainText: '',\n    SupportText: '',\n    Background: '',\n    InteractiveElement: '',\n    LinkSticker: '',\n    FeedPostConnection: '',\n    StickerSuggestions: '',\n    Pillar: p.pillar || '',\n    AnalyticsInsight: p.analyticsInsight || '',\n    Status: 'pending',\n    NeedsReview: nr,\n    ReviewFlags: fl.join('; '),\n    AISource: fsrc,\n    CreatedAt: new Date().toISOString()\n  });\n});\n\nstories.forEach((s, i) => {\n  const day = s.day || dn[i % 7];\n  const ds = df(day);\n  const ts = s.timeSlot || (i < 7 ? 'AM' : 'PM');\n\n  const fl = [];\n  if ((s.mainText || '').length > 50) fl.push('Text>50');\n  if (s.supportText && s.supportText.length > 30) fl.push('Support>30');\n\n  const nr = fl.length > 0;\n  if (nr) flagged++;\n\n  allRows.push({\n    PostID: 'STR-' + ds.replace(/-/g, '') + '-' + ts,\n    ContentType: 'story',\n    ScheduledDate: ds,\n    ScheduledTime: ts === 'AM'\n      ? (cfg.morningStoryTime || '09:00')\n      : (cfg.eveningStoryTime || '19:00'),\n    Day: day,\n    Topic: s.topic || '',            // ✅ fixed\n    Hook: s.hook || '',              // ✅ fixed\n    Caption: s.caption || '',        // ✅ fixed\n    Hashtags: '',\n    CTA: s.cta || '',                // ✅ fixed\n    VisualBrief: s.visualBrief || '', // ✅ fixed\n    ProductFeatured: '',\n    SlideText: '',\n    Script: '',\n    SlideDetails: '',\n    SceneBreakdown: '',\n    StoryType: s.storyType || '',\n    MainText: s.mainText || '',\n    SupportText: s.supportText || '',\n    Background: s.background || '',\n    InteractiveElement: JSON.stringify(s.interactiveElement || ''),\n    LinkSticker: s.linkSticker || '',\n    FeedPostConnection: s.feedPostConnection || '',\n    StickerSuggestions: s.stickerSuggestions || '',\n    Pillar: '',\n    AnalyticsInsight: '',\n    Status: 'pending',\n    NeedsReview: nr,\n    ReviewFlags: fl.join('; '),\n    AISource: ssrc,\n    CreatedAt: new Date().toISOString()\n  });\n});\n\nconst pc = {};\n\nallRows\n  .filter(r => r.ContentType !== 'story')\n  .forEach(r => {\n    const p = r.Pillar || 'Other';\n    pc[p] = (pc[p] || 0) + 1;\n  });\n\nreturn [\n  {\n    json: {\n      allRows,\n      summary: {\n        totalFeed: feedPosts.length,\n        totalStories: stories.length,\n        totalContent: allRows.length,\n        flaggedCount: flagged,\n        majorityFlagged: flagged > (allRows.length * 0.3),\n        pillarCounts: pc,\n        feedSource: fsrc,\n        storySource: ssrc,\n        dateRange: allRows.length\n          ? allRows[0].ScheduledDate + ' to ' + allRows[allRows.length - 1].ScheduledDate\n          : 'N/A'\n      }\n    }\n  }\n];"
+      },
+      "id": "826fd0de-e166-4d74-b12a-a15a9f7b08a9",
+      "name": "Master Process",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        128
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$('Master Process').first().json;return d.allRows.map(r=>({json:r}));"
+      },
+      "id": "cc0907d0-37f6-4145-b172-807fc3b7c69c",
+      "name": "Prepare Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        128
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.PostID }}",
+            "ContentType": "={{ $json.ContentType }}",
+            "ScheduledDate": "={{ $json.ScheduledDate }}",
+            "ScheduledTime": "={{ $json.ScheduledTime }}",
+            "Day": "={{ $json.Day }}",
+            "Topic": "={{ $json.Topic }}",
+            "Hook": "={{ $json.Hook }}",
+            "Caption": "={{ $json.Caption }}",
+            "Hashtags": "={{ $json.Hashtags }}",
+            "CTA": "={{ $json.CTA }}",
+            "StoryType": "={{ $json.StoryType }}",
+            "MainText": "={{ $json.MainText }}",
+            "SupportText": "={{ $json.SupportText }}",
+            "Background": "={{ $json.Background }}",
+            "InteractiveElement": "={{ $json.InteractiveElement }}",
+            "FeedPostConnection": "={{ $json.FeedPostConnection }}",
+            "Pillar": "={{ $json.Pillar }}",
+            "Status": "={{ $json.Status }}",
+            "NeedsReview": "={{ $json.NeedsReview }}",
+            "ReviewFlags": "={{ $json.ReviewFlags }}",
+            "AISource": "={{ $json.AISource }}",
+            "CreatedAt": "={{ $json.CreatedAt }}",
+            "VisualBrief": "={{ $json.VisualBrief }}",
+            "Product Featured": "={{ $json.ProductFeatured }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ContentType",
+              "displayName": "ContentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pillar",
+              "displayName": "Pillar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferred Template",
+              "displayName": "Preferred Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Media Urls",
+              "displayName": "Media Urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ScheduledDate",
+              "displayName": "ScheduledDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ScheduledTime",
+              "displayName": "ScheduledTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product Featured",
+              "displayName": "Product Featured",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "VisualBrief",
+              "displayName": "VisualBrief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "StoryType",
+              "displayName": "StoryType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MainText",
+              "displayName": "MainText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SupportText",
+              "displayName": "SupportText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Background",
+              "displayName": "Background",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "InteractiveElement",
+              "displayName": "InteractiveElement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FeedPostConnection",
+              "displayName": "FeedPostConnection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NeedsReview",
+              "displayName": "NeedsReview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ReviewFlags",
+              "displayName": "ReviewFlags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AISource",
+              "displayName": "AISource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CreatedAt",
+              "displayName": "CreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Visual_URL",
+              "displayName": "Visual_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Visual_Created",
+              "displayName": "Visual_Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Slide_URLs",
+              "displayName": "Slide_URLs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Already_Published",
+              "displayName": "Already_Published",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Published_At",
+              "displayName": "Published_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram_Post_ID",
+              "displayName": "Instagram_Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "14ac1cbe-1579-46b2-87b5-a4687bf34a35",
+      "name": "Write Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -352,
+        128
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$('Master Process').first().json;const f=d.allRows.filter(r=>r.NeedsReview===true);if(!f.length)return[];return f.map(r=>({json:r}));"
+      },
+      "id": "aa33e978-d5c6-4d4a-a22d-c53a167d456e",
+      "name": "Extract Flagged",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        -16
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1529560364,
+          "mode": "list",
+          "cachedResultName": "Sheet5",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=1529560364"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.PostID }}",
+            "ContentType": "={{ $json.ContentType }}",
+            "ScheduledDate": "={{ $json.ScheduledDate }}",
+            "ScheduledTime": "={{ $json.ScheduledTime }}",
+            "Day": "={{ $json.Day }}",
+            "Topic": "={{ $json.Topic }}",
+            "Hook": "={{ $json.Hook }}",
+            "Caption": "={{ $json.Caption }}",
+            "Hashtags": "={{ $json.Hashtags }}",
+            "CTA": "={{ $json.CTA }}",
+            "VisualBrief": "={{ $json.VisualBrief }}",
+            "SlideText": "={{ $json.SlideText }}",
+            "Script": "={{ $json.Script }}",
+            "SlideDetails": "={{ $json.SlideDetails }}",
+            "SceneBreakdown": "={{ $json.SceneBreakdown }}",
+            "StoryType": "={{ $json.StoryType }}",
+            "MainText": "={{ $json.MainText }}",
+            "SupportText": "={{ $json.SupportText }}",
+            "Background": "={{ $json.Background }}",
+            "InteractiveElement": "={{ $json.InteractiveElement }}",
+            "LinkSticker": "={{ $json.LinkSticker }}",
+            "FeedPostConnection": "={{ $json.FeedPostConnection }}",
+            "StickerSuggestions": "={{ $json.StickerSuggestions }}",
+            "Pillar": "={{ $json.Pillar }}",
+            "Status": "={{ $json.Status }}",
+            "NeedsReview": "={{ $json.NeedsReview }}",
+            "ReviewFlags": "={{ $json.ReviewFlags }}",
+            "AISource": "={{ $json.AISource }}",
+            "CreatedAt": "={{ $json.CreatedAt }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ContentType",
+              "displayName": "ContentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ScheduledDate",
+              "displayName": "ScheduledDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ScheduledTime",
+              "displayName": "ScheduledTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "VisualBrief",
+              "displayName": "VisualBrief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SlideText",
+              "displayName": "SlideText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Script",
+              "displayName": "Script",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SlideDetails",
+              "displayName": "SlideDetails",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SceneBreakdown",
+              "displayName": "SceneBreakdown",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "StoryType",
+              "displayName": "StoryType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "MainText",
+              "displayName": "MainText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SupportText",
+              "displayName": "SupportText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Background",
+              "displayName": "Background",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "InteractiveElement",
+              "displayName": "InteractiveElement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "LinkSticker",
+              "displayName": "LinkSticker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "FeedPostConnection",
+              "displayName": "FeedPostConnection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "StickerSuggestions",
+              "displayName": "StickerSuggestions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pillar",
+              "displayName": "Pillar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NeedsReview",
+              "displayName": "NeedsReview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ReviewFlags",
+              "displayName": "ReviewFlags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AISource",
+              "displayName": "AISource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CreatedAt",
+              "displayName": "CreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "5224f774-5e6b-4cc5-baf8-85b019ce08e3",
+      "name": "Write Flagged",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        352,
+        -16
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $('Master Process').first().json;\nconst s = d.summary;\n\nconst pc = Object.entries(s.pillarCounts || {})\n  .map(([k, v]) => '  - ' + k + ': ' + v)\n  .join('\\n');\n\nconst feeds = d.allRows.filter(r => r.ContentType !== 'story');\nconst stories = d.allRows.filter(r => r.ContentType === 'story');\n\n// Feed schedule (existing)\nconst fp = feeds\n  .map(r => '  ' + r.Day + ': [' + r.ContentType + '] ' + r.Topic)\n  .join('\\n');\n\n// 🆕 Story schedule\nconst sp = stories\n  .map(r =>\n    '  ' + r.Day + ' (' + r.ScheduledTime + '): [' + r.StoryType + '] ' +\n    (r.MainText || r.SupportText || '')\n  )\n  .join('\\n');\n\nconst msg =\n  '✅ *Weekly Content Plan Ready!*\\n\\n' +\n  '📅 Week: ' + s.dateRange + '\\n\\n' +\n  '📊 Breakdown:\\n' +\n  '  Feed (' + s.totalFeed + '):\\n' +\n  '  ├─ 📸 3 Single Images\\n' +\n  '  ├─ 🎠 2 Carousels\\n' +\n  '  └─ 🎬 2 Reels\\n' +\n  '  Stories (' + s.totalStories + '):\\n' +\n  '  ├─ 7 Morning (9AM)\\n' +\n  '  └─ 7 Evening (7PM)\\n\\n' +\n\n  '📆 Feed Schedule:\\n' + fp + '\\n\\n' +\n\n  '📲 Story Schedule:\\n' + sp + '\\n\\n' +\n\n  'Pillars:\\n' + pc + '\\n\\n' +\n\n  (s.majorityFlagged ? '🚨 >30% flagged! Review needed.\\n' : '') +\n  '⚠️ Flagged: ' + s.flaggedCount + '\\n' +\n  '🤖 Feed: ' + s.feedSource + ' | Stories: ' + s.storySource + '\\n' +\n  '📋 Calendar: https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?gid=669737308#gid=669737308';\n\nreturn [\n  {\n    json: {\n      message: msg,\n      summary: s,\n      date: new Date().toISOString().split('T')[0],\n      timestamp: new Date().toISOString()\n    }\n  }\n];\n"
+      },
+      "id": "07de40d2-8d65-40dd-824c-21690ad4750c",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        176
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "sendTo": "lordshivavishnu357@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.htmlEmail }}",
+        "options": {}
+      },
+      "id": "dff434e3-dc4c-4526-9b73-c02230ebd1a7",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        176
+      ],
+      "webhookId": "daeed34f-15df-432e-b6d7-0fca3d7b4ddd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZZoOsjL4CVOsU0V6",
+          "name": "Charan Gmail Oauth"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1496286117,
+          "mode": "list",
+          "cachedResultName": "Sheet6",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=1496286117"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $('Build Summary').item.json.date }}",
+            "Feed Posts": "={{ $('Build Summary').item.json.summary.totalFeed }}",
+            "Timestamp": "={{ $('Build Summary').item.json.timestamp }}",
+            "Feed AI": "={{ $('Build Summary').item.json.summary.feedSource }}",
+            "Story AI": "={{ $('Build Summary').item.json.summary.storySource }}",
+            "Flagged": "={{ $('Build Summary').item.json.summary.flaggedCount }}",
+            "Status": "Success",
+            "Stories": "={{ $('Build Summary').item.json.summary.totalStories }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Feed Posts",
+              "displayName": "Feed Posts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Stories",
+              "displayName": "Stories",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Flagged",
+              "displayName": "Flagged",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Feed AI",
+              "displayName": "Feed AI",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Story AI",
+              "displayName": "Story AI",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "fcd0a75f-7c3d-4fcb-bd1a-29760b3457e1",
+      "name": "Update Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        528,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from Master Process node with error handling\nlet d;\ntry {\n    d = $('Master Process').first().json;\n    console.log('✓ Got data from Master Process');\n} catch (e) {\n    console.error('❌ Error: Node \"Master Process\" not available or not executed');\n    return [{ json: { error: 'Master Process node not found', message: e.message } }];\n}\n\n// Validate data structure\nif (!d || !d.allRows || !Array.isArray(d.allRows)) {\n    console.error('❌ Error: allRows is missing or not an array');\n    console.log('Data structure:', JSON.stringify(d, null, 2).substring(0, 500));\n    return [{ json: { error: 'Invalid data structure', data: d } }];\n}\n\nconsole.log(`📊 Total rows: ${d.allRows.length}`);\n\n// Filter stories and feeds\nconst stories = d.allRows.filter(r => r.ContentType === 'story');\nconst feeds = d.allRows.filter(r => r.ContentType !== 'story');\n\nconsole.log(`📖 Stories found: ${stories.length}`);\nconsole.log(`📰 Feed posts found: ${feeds.length}`);\n\n// Check if there are any stories\nif (stories.length === 0) {\n    console.log('⚠️  No stories found in the data');\n    return [{ json: { message: 'No stories to process', totalRows: d.allRows.length } }];\n}\n\n// Map stories to reminder format\nconst reminders = stories.map((s, index) => {\n    console.log(`Processing story ${index + 1}: ${s.PostID}`);\n    \n    // Find matching feed post by date\n    const ft = feeds.find(f => f.ScheduledDate === s.ScheduledDate);\n    \n    // Calculate reminder time (10 minutes before post time)\n    let rt;\n    if (s.ScheduledTime === '09:00' || s.ScheduledTime === '9:00') {\n        rt = '08:50';\n    } else if (s.ScheduledTime === '19:00') {\n        rt = '18:50';\n    } else {\n        // Generic: subtract 10 minutes\n        const [h, m] = (s.ScheduledTime || '09:00').split(':');\n        const totalMinutes = parseInt(h) * 60 + parseInt(m) - 10;\n        const newH = Math.floor(totalMinutes / 60);\n        const newM = totalMinutes % 60;\n        rt = `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;\n    }\n    \n    return {\n        json: {\n            ReminderDate: s.ScheduledDate,\n            ReminderTime: rt,\n            PostTime: s.ScheduledTime,\n            Day: s.Day,\n            TimeSlot: s.PostID.endsWith('AM') ? 'Morning' : 'Evening',\n            StoryType: s.StoryType,\n            MainText: s.MainText,\n            SupportText: s.SupportText,\n            Background: s.Background,\n            InteractiveElement: s.InteractiveElement,\n            FeedPostToday: ft ? ft.Topic : 'None',\n            FeedPostConnection: s.FeedPostConnection,\n            StickerSuggestions: s.StickerSuggestions,\n            Status: 'pending'\n        }\n    };\n});\n\nconsole.log(`✅ Created ${reminders.length} story reminders`);\n\nreturn reminders;"
+      },
+      "id": "b1df1e30-8d8d-414d-acc1-bacaa40dc39c",
+      "name": "Prep Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        176
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 640707850,
+          "mode": "list",
+          "cachedResultName": "Story Remainders",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=640707850"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ReminderDate": "={{ $json.ReminderDate }}",
+            "ReminderTime": "={{ $json.ReminderTime }}",
+            "PostTime": "={{ $json.PostTime }}",
+            "Day": "={{ $json.Day }}",
+            "TimeSlot": "={{ $json.TimeSlot }}",
+            "StoryType": "={{ $json.StoryType }}",
+            "MainText": "={{ $json.MainText }}",
+            "SupportText": "={{ $json.SupportText }}",
+            "Background": "={{ $json.Background }}",
+            "InteractiveElement": "={{ $json.InteractiveElement }}",
+            "FeedPostToday": "={{ $json.FeedPostToday }}",
+            "FeedPostConnection": "={{ $json.FeedPostConnection }}",
+            "StickerSuggestions": "={{ $json.StickerSuggestions }}",
+            "Status": "={{ $json.Status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ReminderDate",
+              "displayName": "ReminderDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ReminderTime",
+              "displayName": "ReminderTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PostTime",
+              "displayName": "PostTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TimeSlot",
+              "displayName": "TimeSlot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "StoryType",
+              "displayName": "StoryType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "MainText",
+              "displayName": "MainText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SupportText",
+              "displayName": "SupportText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Background",
+              "displayName": "Background",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "InteractiveElement",
+              "displayName": "InteractiveElement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FeedPostToday",
+              "displayName": "FeedPostToday",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FeedPostConnection",
+              "displayName": "FeedPostConnection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "StickerSuggestions",
+              "displayName": "StickerSuggestions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3f656ab6-9a66-415f-a7ae-a8ea972d733e",
+      "name": "Write Reminders",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        976,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fp=$('Master Process').first().json;const feedRows=fp.allRows.filter(r=>r.ContentType!=='story');const prodNames=feedRows.map(r=>r.ProductName||r.Topic).filter(Boolean);const today=new Date().toISOString().split('T')[0];let prods=[];try{prods=$('Read Products').all().map(i=>i.json).filter(p=>p.Status==='Active'||p.Status==='Seasonal')}catch(e){}const updates=[];prods.forEach(p=>{if(prodNames.some(n=>n.toLowerCase().includes((p.Name||'').toLowerCase())||((p.Name||'').toLowerCase().includes(n.toLowerCase())))){updates.push({json:{ProductID:p.ProductID,LastFeaturedDate:today}})}});return updates.length?updates:[{json:{skip:true}}];"
+      },
+      "id": "53d98429-47af-4750-9938-80a3c7276608",
+      "name": "Update Featured Dates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        176
+      ],
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 143028096,
+          "mode": "list",
+          "cachedResultName": "Sheet13",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=143028096"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ProductID": "={{ $json.ProductID }}",
+            "LastFeaturedDate": "={{ $json.LastFeaturedDate }}"
+          },
+          "matchingColumns": [
+            "ProductID"
+          ],
+          "schema": [
+            {
+              "id": "ProductID",
+              "displayName": "ProductID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "KeyBenefits",
+              "displayName": "KeyBenefits",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ContentAngle",
+              "displayName": "ContentAngle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SampleHook",
+              "displayName": "SampleHook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "PreferredFormat",
+              "displayName": "PreferredFormat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "PromotionStyle",
+              "displayName": "PromotionStyle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "DoNotSay",
+              "displayName": "DoNotSay",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "TargetAudience",
+              "displayName": "TargetAudience",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Price",
+              "displayName": "Price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "LastFeaturedDate",
+              "displayName": "LastFeaturedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "163daf3c-2ea3-4892-b63f-f0d7e4d8187f",
+      "name": "Write Featured Dates",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1424,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "c12f6ef9-f61c-45ba-8529-d1e4643d87b3",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2096,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "d13bd652-491a-4025-8a0d-35bfc82429f2",
+      "name": "Read Config1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -3488,
+        208
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "lordshivavishnu357@gmail.com",
+        "subject": "=Alert🚨!!!!!",
+        "emailType": "text",
+        "message": "🚨 *AI Generation FAILED* - Templates used. ALL posts need manual review. Check calendar.",
+        "options": {}
+      },
+      "id": "e0b463ab-2250-407f-8ead-853237f9a99a",
+      "name": "Send Email1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        448
+      ],
+      "webhookId": "daeed34f-15df-432e-b6d7-0fca3d7b4ddd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "AjMFrsPA8MHAunjU",
+          "name": "Gmail account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  EMAIL HTML BUILDER v4 — n8n Code Node\n//  White + Gold theme | Format from [brackets] | Mobile ready\n// ============================================================\n\nconst inp     = $input.first().json;\nconst summary = inp.summary || {};\nconst message = inp.message || '';\n\n// ── 1. SUMMARY VALUES ──\nconst totalContent    = summary.totalContent   || 0;\nconst totalFeed       = summary.totalFeed      || 0;\nconst totalStories    = summary.totalStories   || 0;\nconst flaggedCount    = summary.flaggedCount   || 0;\nconst majorityFlagged = summary.majorityFlagged || false;\nconst dateRange       = summary.dateRange      || '';\nconst feedSource      = (summary.feedSource    || 'unknown').toUpperCase();\nconst storySource     = (summary.storySource   || 'unknown').toUpperCase();\nconst pillarCounts    = summary.pillarCounts   || {};\nconst generatedDate   = inp.date || new Date().toISOString().split('T')[0];\n\n// ── 2. CALENDAR LINK ──\nconst calLink = (message.match(/https?:\\/\\/\\S+/) || ['#'])[0];\n\n// ── 3. BREAKDOWN COUNTS ──\nconst singleCount   = (message.match(/(\\d+)\\s*Single Images?/)   || [,'—'])[1];\nconst carouselCount = (message.match(/(\\d+)\\s*Carousels?/)       || [,'—'])[1];\nconst reelCount     = (message.match(/(\\d+)\\s*Reels?/)           || [,'—'])[1];\nconst morningCount  = (message.match(/(\\d+)\\s*Morning/)          || [,'—'])[1];\nconst eveningCount  = (message.match(/(\\d+)\\s*Evening/)          || [,'—'])[1];\n\n// ── 4. PARSE FEED SCHEDULE ──\n// Reads type DIRECTLY from [square_brackets] in each line\nconst feedSection = message.match(/📆 Feed Schedule:\\n([\\s\\S]*?)(?=\\n\\n📲|\\n📲)/);\nconst feedLines   = feedSection\n  ? feedSection[1].trim().split('\\n').map(l => l.trim()).filter(Boolean)\n  : [];\n\nconst feedRows = feedLines.map(line => {\n  // e.g. \"Monday: [single_image] Men's Haircut & Style\"\n  const m = line.match(/^(\\w+):\\s*\\[([^\\]]+)\\]\\s*(.*)/);\n  if (!m) return null;\n  return {\n    day:   m[1],\n    type:  m[2].trim(),   // ✅ exact value from brackets: single_image | carousel | reel\n    topic: m[3].trim()\n  };\n}).filter(Boolean);\n\n// ── 5. PARSE STORY SCHEDULE ──\nconst storySection = message.match(/📲 Story Schedule:\\n([\\s\\S]*?)(?=\\n\\nPillars:)/);\nconst storyLines   = storySection\n  ? storySection[1].trim().split('\\n').map(l => l.trim()).filter(Boolean)\n  : [];\n\nconst storyRows = storyLines.map(line => {\n  // e.g. \"Monday (9:00:00 AM): [Poll] What is your preferred beauty treatment?\"\n  const m = line.match(/^(\\w+)\\s*\\(([^)]+)\\):\\s*\\[([^\\]]+)\\]\\s*(.*)/);\n  if (!m) return null;\n  const timeRaw    = m[2].trim();\n  const timeParts  = timeRaw.match(/(\\d+:\\d+)(?::\\d+)?\\s*(AM|PM)/i);\n  const displayTime = timeParts\n    ? `${timeParts[1]} ${timeParts[2].toUpperCase()}`\n    : timeRaw;\n  return {\n    dayAbbr:     m[1].substring(0, 3).toUpperCase(),\n    displayTime,\n    type:        m[3].trim(),\n    topic:       m[4].trim()\n  };\n}).filter(Boolean);\n\n// ── 6. PILLAR ENTRIES ──\nconst pillarEntries = Object.entries(pillarCounts);\n\n// ============================================================\n//  FORMAT PILL  — reads type from brackets directly\n// ============================================================\nfunction typePill(type) {\n  const t = type.toLowerCase().replace(/[\\s-]+/g, '_');\n\n  let label, bg, color, border;\n\n  if (t.includes('carousel')) {\n    label  = 'CAROUSEL';\n    bg     = '#EBF5FB';\n    color  = '#1A6FA0';\n    border = '#AED6F1';\n  } else if (t.includes('reel')) {\n    label  = 'REEL';\n    bg     = '#F4ECF7';\n    color  = '#7D3C98';\n    border = '#D7BDE2';\n  } else if (t.includes('single') || t.includes('image')) {\n    label  = 'IMAGE';\n    bg     = '#FEF9EC';\n    color  = '#9A6C00';\n    border = '#F0D080';\n  } else {\n    // fallback — show raw label\n    label  = type.toUpperCase().replace(/_/g,' ');\n    bg     = '#F5F5F5';\n    color  = '#555555';\n    border = '#DDDDDD';\n  }\n\n  return `<span style=\"display:inline-block;padding:4px 12px;border-radius:100px;` +\n    `font-family:'Courier New',monospace;font-size:9px;letter-spacing:1px;font-weight:700;` +\n    `background:${bg};color:${color};border:1px solid ${border};\">${label}</span>`;\n}\n\n// ── Feed rows HTML ──\nconst feedRowsHTML = feedRows.map((r, i) => {\n  const isLast    = i === feedRows.length - 1;\n  const rowBorder = isLast ? '' : 'border-bottom:1px solid #F0EBD8;';\n  return `\n        <tr>\n          <td style=\"padding:12px 12px 12px 0;font-size:13px;font-weight:600;\n                     color:#2C2C2C;width:90px;${rowBorder}\">${r.day}</td>\n          <td style=\"padding:12px 8px;${rowBorder}\">${typePill(r.type)}</td>\n          <td style=\"padding:12px 0 12px 8px;font-size:13px;color:#555;${rowBorder}\">${r.topic}</td>\n        </tr>`;\n}).join('');\n\n// ── Story cards — pure table layout (no flex) ──\nconst storyPairs = [];\nfor (let i = 0; i < storyRows.length; i += 2) {\n  storyPairs.push([storyRows[i], storyRows[i + 1] || null]);\n}\n\nfunction storyCardCell(s) {\n  if (!s) return `<td style=\"width:50%;padding:4px;vertical-align:top;\"></td>`;\n  return `\n      <td class=\"story-cell\" style=\"width:50%;padding:4px;vertical-align:top;\">\n        <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"\n               style=\"background:#FFFDF5;border:1px solid #F0D080;border-radius:10px;\">\n          <tr>\n            <td style=\"padding:13px 14px;\">\n              <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n                <tr>\n                  <td style=\"vertical-align:top;width:56px;padding-right:10px;\">\n                    <div style=\"font-family:'Courier New',monospace;font-size:9px;\n                                color:#B8860B;letter-spacing:1px;text-transform:uppercase;\n                                font-weight:700;\">${s.dayAbbr}</div>\n                    <div style=\"font-family:'Courier New',monospace;font-size:11px;\n                                color:#9A6C00;letter-spacing:0.5px;margin-top:2px;\n                                font-weight:700;white-space:nowrap;\">${s.displayTime}</div>\n                  </td>\n                  <td style=\"vertical-align:top;border-left:2px solid #F0D080;padding-left:10px;\">\n                    <div style=\"font-size:9px;font-weight:700;letter-spacing:1.5px;\n                                text-transform:uppercase;color:#B8860B;margin-bottom:4px;\">${s.type}</div>\n                    <div style=\"font-size:12px;color:#444;line-height:1.45;\">${s.topic}</div>\n                  </td>\n                </tr>\n              </table>\n            </td>\n          </tr>\n        </table>\n      </td>`;\n}\n\nconst storyGridHTML = storyPairs.map(pair =>\n  `<tr>${storyCardCell(pair[0])}${storyCardCell(pair[1])}</tr>\n   <tr><td colspan=\"2\" style=\"height:4px;\"></td></tr>`\n).join('');\n\n// ── Pillar cells ──\nconst pillarCellsHTML = pillarEntries.map(([name, count]) => `\n      <td class=\"pillar-cell\" style=\"padding:5px;vertical-align:top;\">\n        <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n          <tr><td style=\"background:#FFFDF5;border:1px solid #F0D080;border-radius:10px;\n                         padding:16px 12px;text-align:center;\">\n            <div style=\"font-family:Georgia,serif;font-size:30px;font-weight:700;\n                        color:#B8860B;line-height:1;margin-bottom:5px;\">${count}</div>\n            <div style=\"font-size:10px;letter-spacing:2px;text-transform:uppercase;\n                        color:#9A6C00;font-weight:400;\">${name}</div>\n          </td></tr>\n        </table>\n      </td>`).join('');\n\n// ── Alert banner ──\nconst alertBannerHTML = majorityFlagged ? `\n  <tr>\n    <td style=\"background:#FFF3F3;border-left:4px solid #E74C3C;padding:14px 24px;\">\n      <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n        <td style=\"font-size:16px;padding-right:10px;vertical-align:middle;\">🚨</td>\n        <td style=\"font-size:13px;color:#C0392B;font-weight:600;\">\n          Review Required — ${flaggedCount} posts flagged. Over 30% of content needs manual approval.\n        </td>\n      </tr></table>\n    </td>\n  </tr>` : '';\n\n// ── Section header helper ──\nfunction sectionHeader(emoji, label) {\n  return `<div style=\"font-family:'Courier New',monospace;font-size:10px;letter-spacing:3px;\n    text-transform:uppercase;color:#B8860B;margin-bottom:18px;font-weight:700;\n    border-bottom:2px solid #F0D080;padding-bottom:10px;\">\n    ${emoji} &nbsp;${label}\n  </div>`;\n}\n\n// ── Gold divider ──\nconst goldDivider = `\n  <tr><td style=\"background:linear-gradient(90deg,transparent,#D4AF37,transparent);\n                 height:1px;\"></td></tr>`;\n\n// ============================================================\n//  FULL HTML\n// ============================================================\nconst html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\">\n<title>Weekly Content Plan — ${dateRange}</title>\n<style>\n  body { margin:0;padding:0;background:#F7F3E9;-webkit-text-size-adjust:100%; }\n\n  @media only screen and (max-width:600px) {\n    .email-wrap   { width:100% !important; }\n    .header-title { font-size:28px !important; }\n    .stat-cell    { display:block !important;width:50% !important;float:left;box-sizing:border-box; }\n    .stats-row    { overflow:hidden !important; }\n    .fmt-cell     { display:block !important;width:50% !important;float:left;box-sizing:border-box;padding:5px !important; }\n    .fmt-row      { overflow:hidden !important; }\n    .story-cell   { display:block !important;width:100% !important;float:none !important; }\n    .pillar-cell  { display:block !important;width:33.33% !important;float:left;box-sizing:border-box; }\n    .pillar-row   { overflow:hidden !important; }\n    .pad          { padding:20px 14px !important; }\n    .cta-btn      { padding:13px 22px !important;font-size:11px !important; }\n  }\n</style>\n</head>\n<body style=\"margin:0;padding:30px 12px;background:#F7F3E9;font-family:'Segoe UI',Arial,sans-serif;\">\n\n<table class=\"email-wrap\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" align=\"center\"\n       style=\"max-width:660px;width:100%;margin:0 auto;border-radius:18px;\n              box-shadow:0 4px 30px rgba(180,140,0,0.12);\">\n\n  <!-- ════ HEADER ════ -->\n  <tr>\n    <td style=\"background:linear-gradient(135deg,#1A1200 0%,#3D2B00 50%,#1A1200 100%);\n               border-radius:18px 18px 0 0;padding:44px 40px 36px;\">\n      <div style=\"font-family:'Courier New',monospace;font-size:10px;letter-spacing:4px;\n                  color:#D4AF37;text-transform:uppercase;margin-bottom:14px;opacity:0.8;\">\n        Angela Italy · Content Intelligence\n      </div>\n      <div class=\"header-title\"\n           style=\"font-family:Georgia,'Times New Roman',serif;font-size:38px;\n                  font-weight:300;line-height:1.15;color:#FFF8E7;margin-bottom:8px;\">\n        Weekly <em style=\"font-style:italic;color:#D4AF37;\">Content</em><br>Plan Ready\n      </div>\n      <div style=\"font-size:12px;font-weight:300;color:rgba(255,248,231,0.55);\n                  letter-spacing:0.5px;margin-top:10px;\">\n        Automated by AI · Reviewed by you · Scheduled for perfection\n      </div>\n      <div style=\"display:inline-block;background:rgba(212,175,55,0.15);\n                  border:1px solid rgba(212,175,55,0.4);border-radius:100px;\n                  padding:7px 18px;font-family:'Courier New',monospace;\n                  font-size:11px;color:#D4AF37;margin-top:20px;letter-spacing:1px;\">\n        📅 &nbsp;${dateRange}\n      </div>\n    </td>\n  </tr>\n\n  ${alertBannerHTML}\n\n  <!-- ════ STATS ════ -->\n  <tr>\n    <td style=\"background:#FFFFFF;padding:0;\n               border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\">\n      <table class=\"stats-row\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"\n             style=\"border-bottom:1px solid #F0EBD8;\">\n        <tr>\n          <td class=\"stat-cell\" style=\"padding:26px 12px;text-align:center;width:25%;\n              border-right:1px solid #F0EBD8;\">\n            <div style=\"font-family:Georgia,serif;font-size:36px;font-weight:700;\n                        color:#B8860B;line-height:1;margin-bottom:5px;\">${totalContent}</div>\n            <div style=\"font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;\">Total</div>\n          </td>\n          <td class=\"stat-cell\" style=\"padding:26px 12px;text-align:center;width:25%;\n              border-right:1px solid #F0EBD8;\">\n            <div style=\"font-family:Georgia,serif;font-size:36px;font-weight:700;\n                        color:#B8860B;line-height:1;margin-bottom:5px;\">${totalFeed}</div>\n            <div style=\"font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;\">Feed</div>\n          </td>\n          <td class=\"stat-cell\" style=\"padding:26px 12px;text-align:center;width:25%;\n              border-right:1px solid #F0EBD8;\">\n            <div style=\"font-family:Georgia,serif;font-size:36px;font-weight:700;\n                        color:#B8860B;line-height:1;margin-bottom:5px;\">${totalStories}</div>\n            <div style=\"font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;\">Stories</div>\n          </td>\n          <td class=\"stat-cell\" style=\"padding:26px 12px;text-align:center;width:25%;\">\n            <div style=\"font-family:Georgia,serif;font-size:36px;font-weight:700;\n                        color:#E74C3C;line-height:1;margin-bottom:5px;\">${flaggedCount}</div>\n            <div style=\"font-size:10px;color:#999;letter-spacing:2px;text-transform:uppercase;\">Flagged</div>\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n\n  <!-- ════ FORMAT BREAKDOWN ════ -->\n  <tr>\n    <td class=\"pad\" style=\"background:#FFFFFF;padding:28px 36px;\n        border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\n        border-bottom:1px solid #F0EBD8;\">\n      ${sectionHeader('📊','Content Breakdown')}\n      <table class=\"fmt-row\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n        <tr>\n          <td class=\"fmt-cell\" style=\"width:50%;padding:0 5px 8px 0;vertical-align:top;\">\n            <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>\n              <td style=\"background:#FFFDF5;border:1px solid #F0D080;border-radius:10px;padding:15px 16px;\">\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n                  <td style=\"font-size:22px;padding-right:11px;vertical-align:middle;\">📸</td>\n                  <td style=\"vertical-align:middle;\">\n                    <div style=\"font-family:Georgia,serif;font-size:26px;font-weight:700;color:#2C2C2C;line-height:1;\">${singleCount}</div>\n                    <div style=\"font-size:10px;color:#9A6C00;letter-spacing:1px;text-transform:uppercase;margin-top:2px;\">Single Images</div>\n                  </td>\n                </tr></table>\n              </td>\n            </tr></table>\n          </td>\n          <td class=\"fmt-cell\" style=\"width:50%;padding:0 0 8px 5px;vertical-align:top;\">\n            <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>\n              <td style=\"background:#FFFDF5;border:1px solid #F0D080;border-radius:10px;padding:15px 16px;\">\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n                  <td style=\"font-size:22px;padding-right:11px;vertical-align:middle;\">🎠</td>\n                  <td style=\"vertical-align:middle;\">\n                    <div style=\"font-family:Georgia,serif;font-size:26px;font-weight:700;color:#2C2C2C;line-height:1;\">${carouselCount}</div>\n                    <div style=\"font-size:10px;color:#9A6C00;letter-spacing:1px;text-transform:uppercase;margin-top:2px;\">Carousels</div>\n                  </td>\n                </tr></table>\n              </td>\n            </tr></table>\n          </td>\n        </tr>\n        <tr>\n          <td class=\"fmt-cell\" style=\"width:50%;padding:0 5px 0 0;vertical-align:top;\">\n            <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>\n              <td style=\"background:#FFFDF5;border:1px solid #F0D080;border-radius:10px;padding:15px 16px;\">\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n                  <td style=\"font-size:22px;padding-right:11px;vertical-align:middle;\">🎬</td>\n                  <td style=\"vertical-align:middle;\">\n                    <div style=\"font-family:Georgia,serif;font-size:26px;font-weight:700;color:#2C2C2C;line-height:1;\">${reelCount}</div>\n                    <div style=\"font-size:10px;color:#9A6C00;letter-spacing:1px;text-transform:uppercase;margin-top:2px;\">Reels</div>\n                  </td>\n                </tr></table>\n              </td>\n            </tr></table>\n          </td>\n          <td class=\"fmt-cell\" style=\"width:50%;padding:0 0 0 5px;vertical-align:top;\">\n            <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>\n              <td style=\"background:#FFFDF5;border:1px solid #F0D080;border-radius:10px;padding:15px 16px;\">\n                <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n                  <td style=\"font-size:22px;padding-right:11px;vertical-align:middle;\">📲</td>\n                  <td style=\"vertical-align:middle;\">\n                    <div style=\"font-family:Georgia,serif;font-size:26px;font-weight:700;color:#2C2C2C;line-height:1;\">${totalStories}</div>\n                    <div style=\"font-size:10px;color:#9A6C00;letter-spacing:1px;text-transform:uppercase;margin-top:2px;\">Stories (${morningCount}AM · ${eveningCount}PM)</div>\n                  </td>\n                </tr></table>\n              </td>\n            </tr></table>\n          </td>\n        </tr>\n      </table>\n    </td>\n  </tr>\n\n  ${goldDivider}\n\n  <!-- ════ FEED SCHEDULE ════ -->\n  <tr>\n    <td class=\"pad\" style=\"background:#FFFFFF;padding:28px 36px;\n        border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\n        border-bottom:1px solid #F0EBD8;\">\n      ${sectionHeader('📆','Feed Schedule')}\n      <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n        <thead>\n          <tr style=\"border-bottom:2px solid #F0D080;\">\n            <th style=\"font-family:'Courier New',monospace;font-size:9px;letter-spacing:2px;\n                       text-transform:uppercase;color:#B8860B;padding:0 0 10px;\n                       text-align:left;font-weight:700;width:90px;\">Day</th>\n            <th style=\"font-family:'Courier New',monospace;font-size:9px;letter-spacing:2px;\n                       text-transform:uppercase;color:#B8860B;padding:0 0 10px 8px;\n                       text-align:left;font-weight:700;width:100px;\">Format</th>\n            <th style=\"font-family:'Courier New',monospace;font-size:9px;letter-spacing:2px;\n                       text-transform:uppercase;color:#B8860B;padding:0 0 10px 8px;\n                       text-align:left;font-weight:700;\">Topic</th>\n          </tr>\n        </thead>\n        <tbody>\n          ${feedRowsHTML}\n        </tbody>\n      </table>\n    </td>\n  </tr>\n\n  ${goldDivider}\n\n  <!-- ════ STORY SCHEDULE ════ -->\n  <tr>\n    <td class=\"pad\" style=\"background:#FFFFFF;padding:28px 36px;\n        border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\n        border-bottom:1px solid #F0EBD8;\">\n      ${sectionHeader('📲','Story Schedule')}\n      <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n        ${storyGridHTML}\n      </table>\n    </td>\n  </tr>\n\n  ${goldDivider}\n\n  <!-- ════ PILLARS ════ -->\n  <tr>\n    <td class=\"pad\" style=\"background:#FFFFFF;padding:28px 36px;\n        border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\n        border-bottom:1px solid #F0EBD8;\">\n      ${sectionHeader('🎯','Content Pillars')}\n      <table class=\"pillar-row\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">\n        <tr>${pillarCellsHTML}</tr>\n      </table>\n    </td>\n  </tr>\n\n  <!-- ════ AI SOURCE BADGES ════ -->\n  <tr>\n    <td class=\"pad\" style=\"background:#FFFDF5;padding:16px 36px;\n        border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\n        border-bottom:1px solid #F0EBD8;\">\n      <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n        <td style=\"padding-right:10px;\">\n          <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n            <td style=\"background:#FFF;border:1px solid #EDE0B0;border-radius:8px;padding:8px 14px;\">\n              <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n                <td style=\"padding-right:7px;vertical-align:middle;\">\n                  <div style=\"width:6px;height:6px;border-radius:50%;background:#27AE60;\"></div>\n                </td>\n                <td style=\"font-family:'Courier New',monospace;font-size:11px;color:#9A6C00;\n                           letter-spacing:0.5px;white-space:nowrap;vertical-align:middle;\">\n                  Feed · ${feedSource}\n                </td>\n              </tr></table>\n            </td>\n          </tr></table>\n        </td>\n        <td>\n          <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n            <td style=\"background:#FFF;border:1px solid #EDE0B0;border-radius:8px;padding:8px 14px;\">\n              <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>\n                <td style=\"padding-right:7px;vertical-align:middle;\">\n                  <div style=\"width:6px;height:6px;border-radius:50%;background:#27AE60;\"></div>\n                </td>\n                <td style=\"font-family:'Courier New',monospace;font-size:11px;color:#9A6C00;\n                           letter-spacing:0.5px;white-space:nowrap;vertical-align:middle;\">\n                  Stories · ${storySource}\n                </td>\n              </tr></table>\n            </td>\n          </tr></table>\n        </td>\n      </tr></table>\n    </td>\n  </tr>\n\n  <!-- ════ CTA ════ -->\n  <tr>\n    <td class=\"pad\" style=\"background:#FFFFFF;padding:30px 36px;text-align:center;\n        border-left:1px solid #EDE0B0;border-right:1px solid #EDE0B0;\">\n      <div style=\"font-size:11px;letter-spacing:2px;text-transform:uppercase;\n                  color:#B8860B;margin-bottom:16px;font-weight:600;\">\n        Review &amp; Approve Content\n      </div>\n      <a class=\"cta-btn\" href=\"${calLink}\"\n         style=\"display:inline-block;background:linear-gradient(135deg,#D4AF37,#B8860B);\n                color:#FFFFFF;font-family:'Courier New',monospace;font-size:12px;font-weight:700;\n                letter-spacing:2px;text-transform:uppercase;text-decoration:none;\n                padding:14px 34px;border-radius:100px;\n                box-shadow:0 4px 18px rgba(180,130,0,0.3);\">\n        OPEN CONTENT CALENDAR →\n      </a>\n    </td>\n  </tr>\n\n  <!-- ════ FOOTER ════ -->\n  <tr>\n    <td style=\"background:linear-gradient(135deg,#1A1200,#3D2B00);\n               border-radius:0 0 18px 18px;padding:22px 36px;\">\n      <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>\n        <td style=\"font-family:Georgia,serif;font-size:17px;font-weight:300;\n                   color:rgba(255,248,231,0.55);letter-spacing:1px;vertical-align:middle;\">\n          Angela <span style=\"color:#D4AF37;\">Italy</span>\n        </td>\n        <td style=\"text-align:right;font-family:'Courier New',monospace;font-size:10px;\n                   color:rgba(255,248,231,0.3);letter-spacing:0.8px;line-height:1.7;\n                   vertical-align:middle;\">\n          Generated ${generatedDate}<br>Automated Content System\n        </td>\n      </tr></table>\n    </td>\n  </tr>\n\n</table>\n</body>\n</html>`;\n\n// ── OUTPUT ──\nreturn [{\n  json: {\n    subject:   `Weekly Content Plan - ${dateRange}`,\n    htmlEmail: html,\n    date:      generatedDate\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        176
+      ],
+      "id": "b8665fab-df1b-4470-8c0d-d55da5b592f3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Template Performance",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "tp-001-read-template-performance",
+      "name": "Read Template Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2704,
+        208
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format Telegram status notification after content plan is created\nconst cfg = $('Read Config1').first().json;\nconst summary = $('Build Summary').first().json;\n\nconst telegramToken = cfg.telegramBotToken || '';\nconst chatId = cfg.telegramChatId || '';\n\nif (!telegramToken || !chatId || telegramToken === 'YOUR_BOT_TOKEN') {\n  return [{ json: { skip: true, reason: 'Telegram not configured' } }];\n}\n\nconst now = new Date();\nconst weekStart = new Date(now);\nweekStart.setDate(now.getDate() + 1); // Next Monday\nwhile (weekStart.getDay() !== 1) weekStart.setDate(weekStart.getDate() + 1);\nconst weekLabel = weekStart.toISOString().split('T')[0];\n\nconst totalContent = summary.totalContent || 21;\nconst totalFeed = summary.totalFeed || 7;\nconst totalStories = summary.totalStories || 14;\nconst flaggedCount = summary.flaggedCount || 0;\nconst feedSource = (summary.feedSource || 'AI').toUpperCase();\n\nlet msg = `📋 *CONTENT PLAN CREATED*\\n`;\nmsg += `Week of ${weekLabel}\\n\\n`;\nmsg += `📊 *Summary:*\\n`;\nmsg += `• Total: ${totalContent} pieces\\n`;\nmsg += `• Feed Posts: ${totalFeed}\\n`;\nmsg += `• Stories: ${totalStories}\\n`;\nmsg += `• Flagged: ${flaggedCount}\\n`;\nmsg += `• AI Source: ${feedSource}\\n\\n`;\nmsg += `🎨 *Next Step:* Visuals are being generated...\\n`;\nmsg += `You'll receive a preview with approval buttons once ready.`;\n\nreturn [{\n  json: {\n    telegramToken,\n    chatId,\n    message: msg,\n    skip: false\n  }\n}];"
+      },
+      "id": "tg-001-format-telegram-status",
+      "name": "Format Telegram Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $json.telegramToken }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $json.chatId, text: $json.message, parse_mode: \"Markdown\" }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "tg-002-send-telegram-status",
+      "name": "Send Telegram Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1872,
+        176
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {
+    "Feed - OpenAI": [
+      {
+        "json": {
+          "id": "chatcmpl-DFu6VN1A9D0WkMy45fyvR4v12gIEA",
+          "object": "chat.completion",
+          "created": 1772682955,
+          "model": "gpt-4-0613",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "[\n  {\n    \"day\": \"Monday\",\n    \"format\": \"SINGLE IMAGE\",\n    \"pillar\": \"Promotion\",\n    \"topic\": \"Men's Haircut & Style\",\n    \"hook\": \"Upgrade your look, starting now\",\n    \"caption\": \"Give your style a professional touch with our modern men's haircut. With our service, you get a consultation, wash, and precise styling, ensuring a sharp look that is easy to maintain. Book your appointment today.\",\n    \"hashtags\": [\"#MensHaircut\", \"#ProfessionalLook\", \"#Stylish\"],\n    \"callToAction\": \"Book your appointment today\",\n    \"visualDirection\": \"Before and after image of a client\",\n    \"productFeatured\": \"Men's Haircut & Style\",\n    \"analyticsInsight\": \"Replicating the promotion style from the 'Deep Tissue Massage' post\"\n  },\n  {\n    \"day\": \"Tuesday\",\n    \"format\": \"CAROUSEL\",\n    \"pillar\": \"Education\",\n    \"topic\": \"Deep Tissue Massage\",\n    \"hook\": \"Stop letting back pain control your life\",\n    \"caption\": \"Our therapeutic Deep Tissue Massage focuses on the deeper layers of muscle and connective tissue. It offers pain relief, improved mobility, and reduced muscle tension. Swipe to learn how it works.\",\n    \"hashtags\": [\"#DeepTissueMassage\", \"#PainRelief\", \"#Wellness\"],\n    \"callToAction\": \"Swipe to learn more\",\n    \"visualDirection\": \"Process of deep tissue massage\",\n    \"productFeatured\": \"Deep Tissue Massage\",\n    \"analyticsInsight\": \"Using the carousel format and educational pillar from the 'Deep Tissue Massage' post\"\n  },\n  {\n    \"day\": \"Wednesday\",\n    \"format\": \"REEL\",\n    \"pillar\": \"Inspiration\",\n    \"topic\": \"Anti-Pollution Mask\",\n    \"hook\": \"The urban shield your skin desperately needs\",\n    \"caption\": \"Our Anti-Pollution Mask is formulated to detoxify your skin and protect it against environmental damage. Experience clearer pores, a brighter complexion, and anti-aging benefits. Watch our reel to see how it works.\",\n    \"hashtags\": [\"#AntiPollutionMask\", \"#SkinCare\", \"#Detoxify\"],\n    \"callToAction\": \"Watch our reel\",\n    \"visualDirection\": \"Application of the mask\",\n    \"productFeatured\": \"Anti-Pollution Mask\",\n    \"analyticsInsight\": \"Replicating the inspiration pillar from the 'Deep Tissue Massage' post\"\n  },\n  {\n    \"day\": \"Thursday\",\n    \"format\": \"SINGLE IMAGE\",\n    \"pillar\": \"Promotion\",\n    \"topic\": \"Eyelash Extensions\",\n    \"hook\": \"Wake up flawless, every single day\",\n    \"caption\": \"Enhance your eyes with our classic and volume lash application for a fuller, longer look. Save time on makeup and customize your style. Schedule your appointment now.\",\n    \"hashtags\": [\"#EyelashExtensions\", \"#Beauty\", \"#Flawless\"],\n    \"callToAction\": \"Schedule your appointment now\",\n    \"visualDirection\": \"Before and after image of a client\",\n    \"productFeatured\": \"Eyelash Extensions\",\n    \"analyticsInsight\": \"Replicating the promotion pillar from the 'Deep Tissue Massage' post\"\n  },\n  {\n    \"day\": \"Friday\",\n    \"format\": \"CAROUSEL\",\n    \"pillar\": \"Education\",\n    \"topic\": \"Vegan Lip Balm Set\",\n    \"hook\": \"Say goodbye to chapped lips forever\",\n    \"caption\": \"Our set of 4 all-natural, cruelty-free, and tinted lip balms provide hydration and a subtle color. Swipe to learn about each balm in the set.\",\n    \"hashtags\": [\"#VeganLipBalm\", \"#Natural\", \"#CrueltyFree\"],\n    \"callToAction\": \"Swipe to learn more\",\n    \"visualDirection\": \"Each lip balm in the set\",\n    \"productFeatured\": \"Vegan Lip Balm Set\",\n    \"analyticsInsight\": \"Using the carousel format and educational pillar from the 'Deep Tissue Massage' post\"\n  },\n  {\n    \"day\": \"Saturday\",\n    \"format\": \"REEL\",\n    \"pillar\": \"Education\",\n    \"topic\": \"Aromatherapy Diffuser\",\n    \"hook\": \"Transform your home into a sanctuary\",\n    \"caption\": \"Our electric essential oil diffuser comes with customizable light settings and a timer. It helps reduce stress, promote better sleep, and create a pleasant home scent. Watch our reel to see how easy it is to use.\",\n    \"hashtags\": [\"#AromatherapyDiffuser\", \"#HomeWellness\", \"#StressRelief\"],\n    \"callToAction\": \"Watch our reel\",\n    \"visualDirection\": \"Demonstration of using the diffuser\",\n    \"productFeatured\": \"Aromatherapy Diffuser\",\n    \"analyticsInsight\": \"Replicating the education pillar from the 'Deep Tissue Massage' post\"\n  },\n  {\n    \"day\": \"Sunday\",\n    \"format\": \"SINGLE IMAGE\",\n    \"pillar\": \"Promotion\",\n    \"topic\": \"Men's Haircut & Style\",\n    \"hook\": \"Upgrade your look, starting now\",\n    \"caption\": \"Get a sharp, professional look with our modern men's haircut. Includes consultation, wash, and precise styling for easy maintenance. Don't wait, book your appointment today.\",\n    \"hashtags\": [\"#MensHaircut\", \"#ProfessionalLook\", \"#EasyMaintenance\"],\n    \"callToAction\": \"Book your appointment today\",\n    \"visualDirection\": \"After image of a client\",\n    \"productFeatured\": \"Men's Haircut & Style\",\n    \"analyticsInsight\": \"Replicating the promotion style from the 'Deep Tissue Massage' post\"\n  }\n]",
+                "refusal": null,
+                "annotations": []
+              },
+              "logprobs": null,
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 1305,
+            "completion_tokens": 1232,
+            "total_tokens": 2537,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "audio_tokens": 0
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "audio_tokens": 0,
+              "accepted_prediction_tokens": 0,
+              "rejected_prediction_tokens": 0
+            }
+          },
+          "service_tier": "default",
+          "system_fingerprint": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Stories - OpenAI": [
+      {
+        "json": {
+          "id": "chatcmpl-DFu7iCrTuy4QmfNLiakZYcDByqqKR",
+          "object": "chat.completion",
+          "created": 1772683030,
+          "model": "gpt-4-0613",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "[\n  {\n    \"day\": \"Monday\",\n    \"timeSlot\": \"AM\",\n    \"topic\": \"Deep Tissue Massage\",\n    \"storyType\": \"Image\",\n    \"hook\": \"Relaxation Secret\",\n    \"mainText\": \"Want to know the secret to a successful deep tissue massage?\",\n    \"supportText\": \"Follow us for insider tips.\",\n    \"caption\": \"Unlock the secret to deep relaxation this week. 🌿💆‍♀️\",\n    \"cta\": \"Swipe for tips\",\n    \"visualBrief\": \"Dark green, calming spa environment\",\n    \"background\": \"Image of a spa\",\n    \"interactiveElement\": {\n      \"type\": \"none\"\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"\",\n    \"stickerSuggestions\": [\"Swipe Up\"]\n  },\n  {\n    \"day\": \"Monday\",\n    \"timeSlot\": \"PM\",\n    \"topic\": \"Deep Tissue Massage\",\n    \"storyType\": \"Tip\",\n    \"hook\": \"Massage Mastery\",\n    \"mainText\": \"Uncover the art of deep tissue massage\",\n    \"supportText\": \"Swipe left for more\",\n    \"caption\": \"Step into our spa, and learn the art of relaxation. 🌿💆‍♀️\",\n    \"cta\": \"Discover more\",\n    \"visualBrief\": \"Light green, clean environment with massage oils\",\n    \"background\": \"Image of massage oils\",\n    \"interactiveElement\": {\n      \"type\": \"none\"\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"Deep Tissue Massage\",\n    \"stickerSuggestions\": [\"Swipe Up\"]\n  },\n  {\n    \"day\": \"Tuesday\",\n    \"timeSlot\": \"AM\",\n    \"topic\": \"Men's Haircut & Style\",\n    \"storyType\": \"Poll\",\n    \"hook\": \"Style Showdown\",\n    \"mainText\": \"What's your go-to men's haircut style?\",\n    \"supportText\": \"Buzz cut or pompadour?\",\n    \"caption\": \"Let's settle this once and for all! Buzz cut or pompadour? 🕴️💇‍♂️\",\n    \"cta\": \"Vote now\",\n    \"visualBrief\": \"Two images side by side, one with a buzz cut, one with a pompadour\",\n    \"background\": \"Image of a barber shop\",\n    \"interactiveElement\": {\n      \"type\": \"poll\",\n      \"question\": \"Buzz cut or pompadour?\",\n      \"options\": [\"Buzz Cut\", \"Pompadour\"]\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"\",\n    \"stickerSuggestions\": [\"Poll\"]\n  },\n  {\n    \"day\": \"Tuesday\",\n    \"timeSlot\": \"PM\",\n    \"topic\": \"Men's Haircut & Style\",\n    \"storyType\": \"BTS\",\n    \"hook\": \"Behind the Style\",\n    \"mainText\": \"Go behind the scenes of our men's styling process\",\n    \"supportText\": \"Swipe left for more\",\n    \"caption\": \"Sneak peek at our styling process. Stay sharp, gentlemen! 🕴️💇‍♂️\",\n    \"cta\": \"See more\",\n    \"visualBrief\": \"Black and white image of a barber shop\",\n    \"background\": \"Image of a barber shop\",\n    \"interactiveElement\": {\n      \"type\": \"none\"\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"Men's Haircut & Style\",\n    \"stickerSuggestions\": [\"Swipe Up\"]\n  },\n  {\n    \"day\": \"Wednesday\",\n    \"timeSlot\": \"AM\",\n    \"topic\": \"Eyelash Extensions\",\n    \"storyType\": \"Question\",\n    \"hook\": \"Lash Love\",\n    \"mainText\": \"What's your preferred eyelash extension style?\",\n    \"supportText\": \"Classic or volume?\",\n    \"caption\": \"Classic or volume? Let's hear your lash love! 👀💕\",\n    \"cta\": \"Answer below\",\n    \"visualBrief\": \"Close-up of eyes, one with classic lashes, one with volume lashes\",\n    \"background\": \"Image of a beauty salon\",\n    \"interactiveElement\": {\n      \"type\": \"question\",\n      \"question\": \"Classic or volume eyelash extensions?\",\n      \"options\": []\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"\",\n    \"stickerSuggestions\": [\"Question\"]\n  },\n  {\n    \"day\": \"Wednesday\",\n    \"timeSlot\": \"PM\",\n    \"topic\": \"Eyelash Extensions\",\n    \"storyType\": \"Image\",\n    \"hook\": \"Lash Transformation\",\n    \"mainText\": \"Discover the transformation with our eyelash extensions\",\n    \"supportText\": \"Before and after swipe\",\n    \"caption\": \"Experience the magic of lash extensions. Swipe left to see the transformation. 👀💕\",\n    \"cta\": \"Swipe left\",\n    \"visualBrief\": \"Before and after images of eyelash extensions\",\n    \"background\": \"Image of a beauty salon\",\n    \"interactiveElement\": {\n      \"type\": \"none\"\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"Eyelash Extensions\",\n    \"stickerSuggestions\": [\"Swipe Up\"]\n  },\n  {\n    \"day\": \"Thursday\",\n    \"timeSlot\": \"AM\",\n    \"topic\": \"Aromatherapy Diffuser\",\n    \"storyType\": \"Quote\",\n    \"hook\": \"Scented Wisdom\",\n    \"mainText\": \"Aromatherapy: Breathing in relaxation, exhaling stress\",\n    \"supportText\": \"Swipe left for our diffuser selection\",\n    \"caption\": \"Inhale relaxation, exhale stress. That's the power of aromatherapy. 🌿🌼\",\n    \"cta\": \"Discover more\",\n    \"visualBrief\": \"Image of a diffuser with a calming environment\",\n    \"background\": \"Image of a wellness spa\",\n    \"interactiveElement\": {\n      \"type\": \"none\"\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"\",\n    \"stickerSuggestions\": [\"Swipe Up\"]\n  },\n  {\n    \"day\": \"Thursday\",\n    \"timeSlot\": \"PM\",\n    \"topic\": \"Aromatherapy Diffuser\",\n    \"storyType\": \"Image\",\n    \"hook\": \"Scented Serenity\",\n    \"mainText\": \"Explore our selection of aromatherapy diffusers\",\n    \"supportText\": \"Swipe left for more\",\n    \"caption\": \"Create your own sanctuary with our range of aromatherapy diffusers. 🌿🌼\",\n    \"cta\": \"Shop now\",\n    \"visualBrief\": \"Several diffusers displayed in a spa-like setting\",\n    \"background\": \"Image of a wellness spa\",\n    \"interactiveElement\": {\n      \"type\": \"none\"\n    },\n    \"linkSticker\": \"\",\n    \"feedPostConnection\": \"Aromatherapy Diffuser\",\n    \"stickerSuggestions\": [\"Swipe Up\"]\n  }\n]",
+                "refusal": null,
+                "annotations": []
+              },
+              "logprobs": null,
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 488,
+            "completion_tokens": 1487,
+            "total_tokens": 1975,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "audio_tokens": 0
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "audio_tokens": 0,
+              "accepted_prediction_tokens": 0,
+              "rejected_prediction_tokens": 0
+            }
+          },
+          "service_tier": "default",
+          "system_fingerprint": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Config1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sunday 7PM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Config1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Archive": {
+      "main": [
+        [
+          {
+            "node": "Read Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Analytics": {
+      "main": [
+        [
+          {
+            "node": "Read Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Products": {
+      "main": [
+        [
+          {
+            "node": "Read Template Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Feed Prompt": {
+      "main": [
+        [
+          {
+            "node": "Feed - OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feed - OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Parse Feed & Story Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Feed - Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feed - Gemini": {
+      "main": [
+        [
+          {
+            "node": "Parse Feed & Story Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Feed Templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Feed Templates": {
+      "main": [
+        [
+          {
+            "node": "Parse Feed & Story Prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Feed & Story Prompt": {
+      "main": [
+        [
+          {
+            "node": "Stories - OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stories - OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Master Process",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stories - Gemini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stories - Gemini": {
+      "main": [
+        [
+          {
+            "node": "Master Process",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Story Templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story Templates": {
+      "main": [
+        [
+          {
+            "node": "Master Process",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Master Process": {
+      "main": [
+        [
+          {
+            "node": "Prepare Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Calendar": {
+      "main": [
+        [
+          {
+            "node": "Extract Flagged",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Flagged": {
+      "main": [
+        [
+          {
+            "node": "Write Flagged",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Summary": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Update Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Log": {
+      "main": [
+        [
+          {
+            "node": "Prep Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prep Reminders": {
+      "main": [
+        [
+          {
+            "node": "Write Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Reminders": {
+      "main": [
+        [
+          {
+            "node": "Update Featured Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Featured Dates": {
+      "main": [
+        [
+          {
+            "node": "Write Featured Dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Featured Dates": {
+      "main": [
+        [
+          {
+            "node": "Format Telegram Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Config1": {
+      "main": [
+        [
+          {
+            "node": "Read Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Template Performance": {
+      "main": [
+        [
+          {
+            "node": "Build Feed Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Telegram Status": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Status": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "38691f15-ec98-4bef-b044-b594fd829286",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9301a0d2cb4f0d3ce4f42b58554435fa7b894db5f60eb53bd5117fd5b924b581"
+  },
+  "id": "ouBtgHKkTp9yHkUYZVbSh",
+  "tags": []
+}

@@ -1,0 +1,1434 @@
+{
+  "name": "Quality Control Agent (Daily + Weekly Analytics)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 21 * * *"
+            }
+          ]
+        }
+      },
+      "id": "ea32bed8-bb7f-44d8-a704-2b9095bf5944",
+      "name": "Daily 9PM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "4145214c-ce8e-45ed-aa84-bb21000f70a8",
+      "name": "Sunday 6PM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        352
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "69a86da6-9890-4ebd-b46d-d422728c5882",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "bbb972b8-487d-4991-9f6a-e957945c0fac",
+      "name": "Read Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        272
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "options": {}
+      },
+      "id": "dec81f6a-4fe6-440c-bfc3-6bb53c6ab1ca",
+      "name": "Read Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        272
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const cal=$input.all().map(i=>i.json);\nconst cfg=$('Read Config').first().json;\nconst now=new Date();\nconst today=now.toISOString().split('T')[0];\nconst isWeekly=now.getDay()===0;\nconst sd=$getWorkflowStaticData('global');\nsd.metrics=[];\nsd.isWeekly=isWeekly;\n\nconst pub=cal.filter(p=>p.Status==='published'&&p.Instagram_Post_ID);\n\nlet posts;\nif(isWeekly){\n  const wa=new Date(now.getTime()-7*864e5).toISOString().split('T')[0];\n  posts=pub.filter(p=>{\n    const pubDate=(p.Published_At||'').split('T')[0];\n    return pubDate>=wa&&pubDate<=today;\n  });\n}\nelse{\n  posts=pub.filter(p=>{\n    const pubDate=(p.Published_At||'').split('T')[0];\n    return pubDate===today;\n  });\n}\n\nif(!posts.length)return[{json:{skip:true,isWeekly}}];\n\nreturn posts.map(p=>({\n  json:{\n    igPostId:p.Instagram_Post_ID,\n    postId:p.PostID,\n    contentType:p.ContentType,\n    pillar:p.Pillar||'',\n    hook:p.Hook||'',\n    topic:p.Topic||'',\n    caption:p.Caption||'',\n    scheduledDate:p.ScheduledDate,\n    publishedAt:p.Published_At,\n    tok:cfg.igAccessToken||'YOUR_IG_ACCESS_TOKEN',\n    isWeekly\n  }\n}));"
+      },
+      "id": "10f8c287-1b84-4486-a201-cb9c92fd43c5",
+      "name": "Detect & Filter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        272
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bfc3fac8-b6c6-4412-94d0-77d6eb581f98",
+      "name": "Insights Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v25.0/{{ $json.igPostId }}/insights?metric={{ $json.metricsToFetch }}&access_token={{ $json.tok }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "1eff4fed-94e0-4c5b-9afc-92a1ee93c8f4",
+      "name": "Fetch Post Insights",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1568,
+        -16
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "24112c48-b272-48c2-91a2-3373b3f090e7",
+      "name": "Wait API",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -16
+      ],
+      "webhookId": "137bbec2-9164-4976-b44a-5e7a3258c11e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst item = $('Insights Loop').first().json;\nconst resp = $('Fetch Post Insights').first().json;\n\n// Initialize if needed\nif (!sd.metrics) {\n  sd.metrics = [];\n}\n\nconst met = {\n  postId: item.postId,\n  contentType: item.contentType,\n  pillar: item.pillar,\n  hook: item.hook,\n  topic: item.topic,\n  date: item.scheduledDate\n};\n\nconst data = resp.data || [];\ndata.forEach(m => {\n  met[m.name] = m.values ? m.values[0].value : 0;\n});\n\nsd.metrics.push(met);\n\n// Return debug info so you can see what's stored\nreturn [{\n  json: {\n    tracked: true,\n    currentCount: sd.metrics.length,\n    justAdded: met,\n    allStoredMetrics: sd.metrics  // Show everything stored so far\n  }\n}];"
+      },
+      "id": "7933d165-f89c-41c1-a64c-fc2736bf495a",
+      "name": "Track Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd = $getWorkflowStaticData('global');\nconst m = sd.metrics || [];\n\n// CRITICAL DEBUG\nconsole.log('=== DEEP ANALYSIS DEBUG ===');\nconsole.log('Metrics count:', m.length);\nconsole.log('All metrics:', JSON.stringify(m, null, 2));\n\n// If empty, return error with details\nif (m.length === 0) {\n  return [{\n    json: {\n      error: 'No metrics collected',\n      sdMetrics: m,\n      sdKeys: Object.keys(sd),\n      isWeekly: sd.isWeekly\n    }\n  }];\n}\n\n// Rest of your analysis code\nconst imgs = m.filter(x => x.contentType === 'single_image');\nconst cars = m.filter(x => x.contentType === 'carousel');\nconst reels = m.filter(x => x.contentType === 'reel');\nconst stories = m.filter(x => x.contentType === 'story');\n\nfunction avg(a, k) {\n  if (!a.length) return 0;\n  return Math.round(a.reduce((s, x) => s + (x[k] || 0), 0) / a.length);\n}\n\nfunction best(a) {\n  if (!a.length) return {};\n  return a.reduce((b, x) => (x.total_interactions || 0) > (b.total_interactions || 0) ? x : b, a[0]);\n}\n\nconst fmts = {\n  images: avg(imgs, 'total_interactions'),\n  carousels: avg(cars, 'total_interactions'),\n  reels: avg(reels, 'total_interactions')\n};\n\nconst bestFmt = Object.entries(fmts).sort((a, b) => b[1] - a[1])[0][0];\n\nconst analysis = {\n  images: {\n    count: imgs.length,\n    avgEng: fmts.images,\n    avgReach: avg(imgs, 'reach'),\n    best: best(imgs)\n  },\n  carousels: {\n    count: cars.length,\n    avgEng: fmts.carousels,\n    avgReach: avg(cars, 'reach'),\n    best: best(cars)\n  },\n  reels: {\n    count: reels.length,\n    avgEng: fmts.reels,\n    avgReach: avg(reels, 'reach'),\n    best: best(reels)\n  },\n  stories: {\n    count: stories.length,\n    avgReach: avg(stories, 'reach')\n  },\n  totalReach: m.reduce((s, x) => s + (x.reach || 0), 0),\n  totalEng: m.reduce((s, x) => s + (x.total_interactions || 0), 0),\n  bestFormat: bestFmt,\n  allMetrics: m\n};\n\nreturn [{json: analysis}];"
+      },
+      "id": "255009f5-520c-4431-845d-b443d895f4c8",
+      "name": "Deep Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:\"gpt-4\",messages:[{role:\"system\",content:\"You are an expert Instagram content strategist. Analyze the performance data and provide exactly 5 specific, actionable recommendations. Label each as HIGH IMPACT, MEDIUM IMPACT, or LOW EFFORT. Cover: 1) Content type mix, 2) Hook/caption style, 3) Best topics, 4) Story improvements, 5) Timing/scheduling. Be specific with numbers.And give the recommendation in simple and clearer .Do not give the messy shit only provide simple and undersatandable and usable recommendation\"},{role:\"user\",content:\"Weekly performance data: \"+JSON.stringify($json)}],temperature:0.7,max_tokens:1000}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "98385bac-40a5-4189-abbb-f2a06e6c47a6",
+      "name": "AI Recommendations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1792,
+        176
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resp=$input.first().json;const analysis=$('Deep Analysis').first().json;\nlet recs='No AI recommendations available';\ntry{recs=resp.choices[0].message.content}catch(e){}\nreturn[{json:{...analysis,recommendations:recs}}];"
+      },
+      "id": "f4d14c28-cb3a-43fc-b6d4-018696403bf9",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 376209861,
+          "mode": "list",
+          "cachedResultName": "Analytics Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=376209861"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $json.carousels.best.topic }}",
+            "ContentType": "={{ $json.carousels.best.contentType }}",
+            "EngagementRate": "={{ $json.carousels.avgReach }}",
+            "Likes": "={{ $json.carousels.best.likes }}",
+            "Comments": "={{ $json.carousels.best.comments }}",
+            "Saves": "={{ $json.carousels.best.saved }}",
+            "Shares": "={{ $json.carousels.best.shares }}",
+            "Reach": "={{ $json.carousels.avgReach }}",
+            "PostDate": "={{ $json.carousels.best.date }}",
+            "HookStyle": "={{ $json.carousels.best.hook }}",
+            "Ai recommendation": "={{ $json.recommendations }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ContentType",
+              "displayName": "ContentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "EngagementRate",
+              "displayName": "EngagementRate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Saves",
+              "displayName": "Saves",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reach",
+              "displayName": "Reach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CaptionLength",
+              "displayName": "CaptionLength",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PostingHour",
+              "displayName": "PostingHour",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "HashtagCount",
+              "displayName": "HashtagCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CallToAction",
+              "displayName": "CallToAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ProductFeatured",
+              "displayName": "ProductFeatured",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ai recommendation",
+              "displayName": "Ai recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HookStyle",
+              "displayName": "HookStyle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PostDate",
+              "displayName": "PostDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3cc75ab1-6094-4a53-b01d-16d122f7f400",
+      "name": "Update Dashboard",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2320,
+        144
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$input.first().json;const i=d.images||{};const c=d.carousels||{};const r=d.reels||{};const s=d.stories||{};\nlet msg='📊 *Weekly Instagram Performance Report*\\n\\n';\nmsg+='🏆 FEED POST PERFORMANCE\\n\\n';\nmsg+='📸 Single Images ('+i.count+'): Avg '+i.avgEng+' engagements, Reach: '+i.avgReach+'\\n';\nmsg+='  Best: '+(i.best?.postId||'N/A')+'\\n\\n';\nmsg+='🎠 Carousels ('+c.count+'): Avg '+c.avgEng+' engagements, Reach: '+c.avgReach+'\\n';\nmsg+='  Best: '+(c.best?.postId||'N/A')+'\\n\\n';\nmsg+='🎬 Reels ('+r.count+'): Avg '+r.avgEng+' engagements, Reach: '+r.avgReach+'\\n';\nmsg+='  Best: '+(r.best?.postId||'N/A')+'\\n\\n';\nmsg+='📱 Stories ('+s.count+'): Avg Reach: '+s.avgReach+'\\n\\n';\nmsg+='📈 OVERALL\\n  Total Reach: '+d.totalReach+'\\n  Total Engagement: '+d.totalEng+'\\n  Best Format: '+d.bestFormat+'\\n\\n';\nmsg+='💡 AI RECOMMENDATIONS\\n'+d.recommendations+'\\n';\nconst date=new Date().toISOString().split('T')[0];\nreturn[{json:{message:msg,date,ts:new Date().toISOString(),totalReach:d.totalReach,totalEng:d.totalEng,bestFormat:d.bestFormat,recs:d.recommendations}}];"
+      },
+      "id": "1aaf0b35-e26b-49b2-92ab-f4a617a320ea",
+      "name": "Build Weekly Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Analytics Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $json.date }}",
+            "TotalReach": "={{ $json.totalReach }}",
+            "TotalEngagement": "={{ $json.totalEng }}",
+            "BestFormat": "={{ $json.bestFormat }}",
+            "Timestamp": "={{ $json.ts }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "1cc2da74-e2d0-4d1e-bb61-dea4e9369c41",
+      "name": "Update Analytics Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2688,
+        176
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sd=$getWorkflowStaticData('global');const m=sd.metrics||[];\nif(!m.length)return[{json:{message:'📊 No posts published today.',date:new Date().toISOString().split('T')[0]}}];\nconst p=m[0];const eng=p.engagement||0;const reach=p.impressions||0;const saves=p.saved||0;\nconst msg='📊 *Today\\'s Post Performance*\\n\\nType: '+p.contentType+'\\nPost: '+p.postId+'\\nTopic: '+(p.topic||p.hook||'')+'\\n\\nReach: '+reach+'\\nEngagement: '+eng+'\\nSaves: '+saves+' ⭐\\n';\nreturn[{json:{message:msg,date:new Date().toISOString().split('T')[0]}}];"
+      },
+      "id": "32e89eb5-d54e-4f40-990b-4cb8ac12d951",
+      "name": "Daily Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        368
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "13095612-2744-4329-a14b-f20203820606",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3392,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const contentType = $json.contentType;\n\nlet metrics;\nif (contentType === 'reel') {\n  // Reels support more metrics including impressions\n  metrics = 'plays,reach,likes,comments,shares,saved,total_interactions';\n} else if (contentType === 'carousel' || contentType === 'single_image') {\n  // Carousels and images - NO impressions in v22.0+\n  metrics = 'reach,likes,comments,shares,saved,total_interactions';\n} else {\n  metrics = 'reach';\n}\n\nreturn {\n  json: {\n    ...$json,\n    metricsToFetch: metrics\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -16
+      ],
+      "id": "b60593cf-a3a5-48a3-b275-75fb872f8e3e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        896,
+        272
+      ],
+      "id": "67ba9af9-5971-418d-ba91-1ab22c5a062e",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from Code in JavaScript node\nconst codeNodeItems = $('Code in JavaScript').all().map(item => item.json);\n\n// Get data from Track Metrics node\nconst trackMetricsItems = $('Track Metrics').all().map(item => item.json);\n\n// Stringify both\nconst codeNodeString = JSON.stringify(codeNodeItems);\nconst trackMetricsString = JSON.stringify(trackMetricsItems);\n\n// Return exactly two key-value pairs\nreturn [\n  {\n    json: {\n      codeNodeData: codeNodeString,\n      trackMetricsData: trackMetricsString\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -16
+      ],
+      "id": "56032604-acce-4af1-8b6f-a6bb71a984a1",
+      "name": "Stringify Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4\",\n  messages: [\n    {\n      role: \"system\",\n      content: \"You are an expert Instagram growth strategist. You give short, clear and practical advice.\"\n    },\n    {\n      role: \"user\",\n      content:\n        \"Content Data (stringified JSON): \" + $json.codeNodeData +\n        \"\\n\\nMetrics Data (stringified JSON): \" + $json.trackMetricsData +\n        \"\\n\\nInstructions:\\n\" +\n        \"1. Analyze both content and performance metrics.\\n\" +\n        \"2. Give EXACTLY 5 bullet point recommendations.\\n\" +\n        \"3. Each bullet must start with HIGH IMPACT, MEDIUM IMPACT, or LOW EFFORT.\\n\" +\n        \"4. Keep each bullet short and concise.\\n\" +\n        \"5. No explanations. No paragraphs. Only 5 bullets.\\n\" +\n        \"6. Cover:\\n\" +\n        \"   - Content type mix\\n\" +\n        \"   - Hook and caption style\\n\" +\n        \"   - Best topics\\n\" +\n        \"   - Story improvements\\n\" +\n        \"   - Timing and scheduling\\n\\n\" +\n        \"After the 5 bullet points, return ONLY this JSON:\\n\" +\n        \"{\\n\" +\n        \"  \\\"CaptionLength\\\": number,\\n\" +\n        \"  \\\"HashtagCount\\\": number,\\n\" +\n        \"  \\\"CallToAction\\\": \\\"string\\\",\\n\" +\n        \"  \\\"ProductFeatured\\\": true or false\\n\" +\n        \"}\\n\\n\" +\n        \"Important:\\n\" +\n        \"- ProductFeatured must be boolean true or false.\\n\" +\n        \"- Do NOT return product name.\\n\" +\n        \"- Do NOT add extra text before or after JSON.\\n\" +\n        \"- Output format: 5 bullets first, then JSON only.\"\n    }\n  ],\n  temperature: 0.5,\n  max_tokens: 700\n}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "bcd73f3d-cb0e-4e11-992d-c272447d7da2",
+      "name": "Recommendations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2448,
+        -16
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get full OpenAI response\nconst response = $input.first().json;\n\n// Extract assistant content\nconst content = response.choices?.[0]?.message?.content || \"\";\n\n// Split recommendations and JSON summary\nconst splitIndex = content.indexOf(\"JSON summary:\");\n\nlet recommendations = content;\nlet summaryObject = {};\n\nif (splitIndex !== -1) {\n  recommendations = content.substring(0, splitIndex).trim();\n\n  const jsonPart = content.substring(splitIndex + \"JSON summary:\".length).trim();\n\n  try {\n    summaryObject = JSON.parse(jsonPart);\n  } catch (error) {\n    summaryObject = { parseError: \"Invalid JSON format from AI\" };\n  }\n}\n\n// Return clean structured output\nreturn [\n  {\n    json: {\n      recommendations: recommendations,\n      CaptionLength: summaryObject.CaptionLength || 0,\n      HashtagCount: summaryObject.HashtagCount || 0,\n      CallToAction: summaryObject.CallToAction || \"\",\n      ProductFeatured: summaryObject.ProductFeatured || \"\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        -16
+      ],
+      "id": "00047ab9-c94f-4ac4-806c-f53d997b7e19",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 376209861,
+          "mode": "list",
+          "cachedResultName": "Analytics Dashboard",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=376209861"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $('Code in JavaScript').item.json.Topic }}",
+            "ContentType": "={{ $('Code in JavaScript').item.json.ContentType }}",
+            "Likes": "={{ $('Track Metrics').item.json.justAdded.likes }}",
+            "Comments": "={{ $('Track Metrics').item.json.justAdded.comments }}",
+            "Saves": "={{ $('Track Metrics').item.json.justAdded.saved }}",
+            "Shares": "={{ $('Track Metrics').item.json.justAdded.shares }}",
+            "Reach": "={{ $('Track Metrics').item.json.justAdded.reach }}",
+            "PostDate": "={{ $('Code in JavaScript').item.json.Published_At }}",
+            "HookStyle": "={{ $('Code in JavaScript').item.json.Hook }}",
+            "Ai recommendation": "={{ $json.recommendations }}",
+            "CaptionLength": "={{ $json.CaptionLength }}",
+            "HashtagCount": "={{ $json.HashtagCount }}",
+            "CallToAction": "={{ $json.CallToAction }}",
+            "ProductFeatured": "={{ $('Code in JavaScript').item.json[\"Product Featured\"] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ContentType",
+              "displayName": "ContentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "EngagementRate",
+              "displayName": "EngagementRate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Likes",
+              "displayName": "Likes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Comments",
+              "displayName": "Comments",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Saves",
+              "displayName": "Saves",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Shares",
+              "displayName": "Shares",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reach",
+              "displayName": "Reach",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CaptionLength",
+              "displayName": "CaptionLength",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PostingHour",
+              "displayName": "PostingHour",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "HashtagCount",
+              "displayName": "HashtagCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "CallToAction",
+              "displayName": "CallToAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ProductFeatured",
+              "displayName": "ProductFeatured",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ai recommendation",
+              "displayName": "Ai recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "HookStyle",
+              "displayName": "HookStyle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PostDate",
+              "displayName": "PostDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6534b37d-1372-45e1-bc95-ecfdbb8def34",
+      "name": "Update Dashboard1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2912,
+        160
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $getWorkflowStaticData(\"global\").isWeekly }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "463ff87a-1cb8-44a2-af7c-fc0318bd984f",
+      "name": "Route Mode",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Template Performance data from analytics\nconst cal = $('Read Calendar').all().map(i => i.json);\nconst now = new Date().toISOString();\nconst results = [];\n\n// Group by template + content type + pillar\nconst templateMap = {};\n\nfor (const post of cal) {\n  if (!post.PostID || !post.ContentType) continue;\n  if (post.Status !== 'published') continue;\n  \n  const tpl = post['Preferred Template'] || 'default';\n  const ct = (post.ContentType || '').toLowerCase().replace(/\\s+/g, '_');\n  const pillar = post.Pillar || 'unknown';\n  const key = `${tpl}|${ct}|${pillar}`;\n  \n  // Calculate performance score\n  const eng = parseFloat(post.EngagementRate) || 0;\n  const saves = parseInt(post.Saves) || 0;\n  const shares = parseInt(post.Shares) || 0;\n  const reach = parseInt(post.Reach) || 0;\n  \n  // Weighted score: engagement*100 + saves*2 + shares*3\n  const score = (eng > 1 ? eng : eng * 100) + saves * 2 + shares * 3;\n  \n  if (!templateMap[key]) {\n    templateMap[key] = {\n      TemplateID: tpl,\n      TemplateName: tpl.replace(/\\(Id:[^)]+\\)/i, '').replace(/\\([a-f0-9\\-]{36}\\)/i, '').trim(),\n      ContentType: ct,\n      Pillar: pillar,\n      scores: [],\n      timesUsed: 0\n    };\n  }\n  \n  templateMap[key].scores.push(score);\n  templateMap[key].timesUsed++;\n}\n\n// Calculate averages and output\nfor (const [key, data] of Object.entries(templateMap)) {\n  const avgScore = data.scores.reduce((a, b) => a + b, 0) / data.scores.length;\n  results.push({\n    json: {\n      TemplateID: data.TemplateID,\n      TemplateName: data.TemplateName,\n      ContentType: data.ContentType,\n      Pillar: data.Pillar,\n      PerformanceScore: avgScore.toFixed(2),\n      TimesUsed: data.timesUsed,\n      LastUpdated: now\n    }\n  });\n}\n\nreturn results.length > 0 ? results : [{ json: { skip: true } }];\n"
+      },
+      "id": "0eac3757-ee66-4486-8e86-1def20b55176",
+      "name": "Build Template Performance",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Template Performance",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      },
+      "id": "d026fcb2-5b0a-4459-833d-ba648885eabb",
+      "name": "Write Template Performance",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3152,
+        368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {
+    "Deep Analysis": [
+      {
+        "json": {
+          "images": {
+            "count": 0,
+            "avgEng": 0,
+            "avgReach": 0,
+            "best": {}
+          },
+          "carousels": {
+            "count": 1,
+            "avgEng": 0,
+            "avgReach": 7,
+            "best": {
+              "postId": "CAR-20260217-001",
+              "contentType": "carousel",
+              "pillar": "",
+              "hook": "",
+              "topic": "Deep Tissue Massage",
+              "date": "2026-02-17",
+              "reach": 7,
+              "likes": 0,
+              "comments": 0,
+              "shares": 0,
+              "saved": 0,
+              "total_interactions": 0
+            }
+          },
+          "reels": {
+            "count": 0,
+            "avgEng": 0,
+            "avgReach": 0,
+            "best": {}
+          },
+          "stories": {
+            "count": 0,
+            "avgReach": 0
+          },
+          "totalReach": 7,
+          "totalEng": 0,
+          "bestFormat": "images",
+          "allMetrics": [
+            {
+              "postId": "CAR-20260217-001",
+              "contentType": "carousel",
+              "pillar": "",
+              "hook": "",
+              "topic": "Deep Tissue Massage",
+              "date": "2026-02-17",
+              "reach": 7,
+              "likes": 0,
+              "comments": 0,
+              "shares": 0,
+              "saved": 0,
+              "total_interactions": 0
+            }
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Fetch Post Insights": [
+      {
+        "json": {
+          "data": [
+            {
+              "name": "reach",
+              "period": "lifetime",
+              "values": [
+                {
+                  "value": 7
+                }
+              ],
+              "title": "Accounts reached",
+              "description": "The number of unique accounts that have seen this carousel container, at least once. Reach is different from impressions, which may include multiple views of your carousel container by the same accounts. This metric is estimated.",
+              "id": "18048254273711382/insights/reach/lifetime"
+            },
+            {
+              "name": "likes",
+              "period": "lifetime",
+              "values": [
+                {
+                  "value": 0
+                }
+              ],
+              "title": "Likes",
+              "description": "The number of likes on your post.",
+              "id": "18048254273711382/insights/likes/lifetime"
+            },
+            {
+              "name": "comments",
+              "period": "lifetime",
+              "values": [
+                {
+                  "value": 0
+                }
+              ],
+              "title": "Comments",
+              "description": "The number of comments on your post.",
+              "id": "18048254273711382/insights/comments/lifetime"
+            },
+            {
+              "name": "shares",
+              "period": "lifetime",
+              "values": [
+                {
+                  "value": 0
+                }
+              ],
+              "title": "Shares",
+              "description": "The number of shares of your post.",
+              "id": "18048254273711382/insights/shares/lifetime"
+            },
+            {
+              "name": "saved",
+              "period": "lifetime",
+              "values": [
+                {
+                  "value": 0
+                }
+              ],
+              "title": "Saved",
+              "description": "The number of saves of your post.",
+              "id": "18048254273711382/insights/saved/lifetime"
+            },
+            {
+              "name": "total_interactions",
+              "period": "lifetime",
+              "values": [
+                {
+                  "value": 0
+                }
+              ],
+              "title": "Post interactions",
+              "description": "The number of likes, saves, comments and shares on your post minus the number of unlikes, unsaves and deleted comments.",
+              "id": "18048254273711382/insights/total_interactions/lifetime"
+            }
+          ]
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Recommendations": [
+      {
+        "json": {
+          "id": "chatcmpl-DFCchFdYWEyDPIMDONkQyIVqu9e9n",
+          "object": "chat.completion",
+          "created": 1772515815,
+          "model": "gpt-4-0613",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "HIGH IMPACT: Diversify content type to include videos and carousels for higher engagement.\nMEDIUM IMPACT: Use a more engaging hook and caption, incorporating a question or call to action.\nHIGH IMPACT: Experiment with different topics, trending styles or hair care tips could attract more attention.\nMEDIUM IMPACT: Incorporate stories to highlight customer testimonials or behind-the-scenes content.\nLOW EFFORT: Experiment with posting times, consider peak user activity times for better reach.\n\n{\"CaptionLength\": 28, \"HashtagCount\": 10, \"CallToAction\": \"Book your appointment today\", \"ProductFeatured\": true}",
+                "refusal": null,
+                "annotations": []
+              },
+              "logprobs": null,
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 614,
+            "completion_tokens": 129,
+            "total_tokens": 743,
+            "prompt_tokens_details": {
+              "cached_tokens": 0,
+              "audio_tokens": 0
+            },
+            "completion_tokens_details": {
+              "reasoning_tokens": 0,
+              "audio_tokens": 0,
+              "accepted_prediction_tokens": 0,
+              "rejected_prediction_tokens": 0
+            }
+          },
+          "service_tier": "default",
+          "system_fingerprint": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Daily 9PM": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sunday 6PM": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Config": {
+      "main": [
+        [
+          {
+            "node": "Read Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar": {
+      "main": [
+        [
+          {
+            "node": "Detect & Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect & Filter": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insights Loop": {
+      "main": [
+        [
+          {
+            "node": "Route Mode",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Post Insights": {
+      "main": [
+        [
+          {
+            "node": "Wait API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait API": {
+      "main": [
+        [
+          {
+            "node": "Track Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Metrics": {
+      "main": [
+        [
+          {
+            "node": "Stringify Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deep Analysis": {
+      "main": [
+        [
+          {
+            "node": "AI Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Update Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Build Weekly Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Weekly Report": {
+      "main": [
+        [
+          {
+            "node": "Update Analytics Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Analytics Log": {
+      "main": [
+        [
+          {
+            "node": "Build Template Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Digest": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Fetch Post Insights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Insights Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stringify Data": {
+      "main": [
+        [
+          {
+            "node": "Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update Dashboard1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Dashboard1": {
+      "main": [
+        [
+          {
+            "node": "Insights Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Mode": {
+      "main": [
+        [
+          {
+            "node": "Deep Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Daily Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Template Performance": {
+      "main": [
+        [
+          {
+            "node": "Write Template Performance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Template Performance": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5a12706f-df66-4504-a570-58f517132f8f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9301a0d2cb4f0d3ce4f42b58554435fa7b894db5f60eb53bd5117fd5b924b581"
+  },
+  "id": "RasJHXzO5WUnQrw4",
+  "tags": []
+}

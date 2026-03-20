@@ -1,0 +1,4 @@
+*.backup
+__pycache__/
+.DS_Store
+n8n-skills/

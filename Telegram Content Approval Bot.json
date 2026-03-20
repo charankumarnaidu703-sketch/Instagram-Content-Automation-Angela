@@ -1,0 +1,1482 @@
+{
+  "name": "Telegram Content Approval Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "telegram-approval-bot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "fdc0c7ca-e626-4074-b120-6c696f59e0b2",
+      "name": "Telegram Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Config"
+        },
+        "options": {}
+      },
+      "id": "6a4313b1-c6a5-431b-9ca9-f5cacc49792e",
+      "name": "Read Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst body = $('Telegram Webhook').first().json.body || $('Telegram Webhook').first().json;\nconst sd = $getWorkflowStaticData('global');\n\nlet action = '', postId = '', batchId = '', messageText = '', chatId = '', userId = '';\n\n// Handle callback_query (button click)\nif (body.callback_query) {\n  const cb = body.callback_query;\n  const data = cb.data || '';\n  const parts = data.split('|');\n  action = parts[0] || '';\n  batchId = parts[1] || '';\n  chatId = String(cb.message?.chat?.id || '');\n  userId = String(cb.from?.id || '');\n  sd.chatId = chatId;\n  sd.batchId = batchId;\n}\n// Handle text message (reply to bot)\nelse if (body.message && body.message.text) {\n  messageText = body.message.text.trim();\n  chatId = String(body.message.chat?.id || sd.chatId || '');\n  userId = String(body.message.from?.id || '');\n  \n  const upper = messageText.toUpperCase();\n  if (upper.startsWith('IMAGE ')) { action = 'process_image'; postId = messageText.split(/\\s+/)[1] || ''; }\n  else if (upper.startsWith('TEXT ')) { action = 'process_text'; postId = messageText.split(/\\s+/)[1] || ''; }\n  else if (upper.startsWith('HOOK ')) { action = 'process_text'; postId = messageText.split(/\\s+/)[1] || ''; }\n  else if (upper.startsWith('REGEN ')) { action = 'process_regen'; postId = messageText.split(/\\s+/)[1] || ''; }\n  else { action = 'unknown'; }\n}\n\nconst cfg = $('Read Config').first().json;\nconst token = cfg.telegramBotToken || '';\n\nreturn [{ json: { action, postId, batchId, messageText, chatId, userId, token, rawBody: body } }];\n"
+      },
+      "id": "63f7e988-1d42-42a7-8a51-7f013e870432",
+      "name": "Parse Incoming",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "approve_all",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "change_image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "AskImage"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "change_text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "AskText"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "regenerate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "AskRegen"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "process_image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ProcessImage"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "process_text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ProcessText"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "process_regen",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "ProcessRegen"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "37b22571-9d6a-4c22-862c-4fac8fa9761d",
+      "name": "Route by Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nconst token = data.token;\nconst chatId = data.chatId;\nconst batchId = data.batchId;\n\n// Send confirmation\nawait $helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${token}/sendMessage`,\n  body: {\n    chat_id: chatId,\n    text: `✅ *ALL CONTENT APPROVED!*\\n\\nBatch: \\`${batchId}\\`\\n\\n📅 Publishing will proceed per schedule.\\n🤖 The publishing engine will auto-publish each post at its scheduled time.\\n\\nGreat work! 🎉`,\n    parse_mode: 'Markdown'\n  },\n  headers: { 'Content-Type': 'application/json' }\n});\n\nreturn [{ json: { action: 'approve', batchId, chatId } }];\n"
+      },
+      "id": "45e7c447-f607-4320-ace9-bda6cb732cd1",
+      "name": "Approve All",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "options": {}
+      },
+      "id": "1af9fb08-3543-4908-814e-097b5803475d",
+      "name": "Read Calendar for Approve",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1240,
+        -400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst cal = $input.all().map(i => i.json);\nconst now = new Date().toISOString();\nconst results = [];\n\nfor (const row of cal) {\n  if (row.Status === 'visuals_created') {\n    results.push({\n      json: {\n        PostID: row.PostID,\n        Status: 'approved',\n        ApprovalStatus: 'approved',\n        ApprovedAt: now\n      }\n    });\n  }\n}\n\nreturn results.length > 0 ? results : [{ json: { skip: true } }];\n"
+      },
+      "id": "67233ea0-1686-4bb8-b729-f7de7e7cd902",
+      "name": "Mark Posts Approved",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.PostID }}",
+            "Status": "={{ $json.Status }}",
+            "ApprovalStatus": "={{ $json.ApprovalStatus }}",
+            "ApprovedAt": "={{ $json.ApprovedAt }}"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ApprovalStatus",
+              "displayName": "ApprovalStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ApprovedAt",
+              "displayName": "ApprovedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3161a7da-4409-46d5-b4ec-56c7437b8692",
+      "name": "Update Calendar Approved",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1720,
+        -400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nawait $helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${data.token}/sendMessage`,\n  body: {\n    chat_id: data.chatId,\n    text: '🖼️ *Change Image*\\n\\nSend the new image in this format:\\n\\n`IMAGE PostID ImageURL`\\n\\nExample:\\n`IMAGE IMG-20260323-001 https://example.com/new-photo.jpg`\\n\\nYou can find the Post ID in the content preview above.',\n    parse_mode: 'Markdown'\n  },\n  headers: { 'Content-Type': 'application/json' }\n});\nreturn [{ json: { asked: 'image', chatId: data.chatId } }];\n"
+      },
+      "id": "d3f0c683-1c95-4872-8f22-0f2899284596",
+      "name": "Ask for Image",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nawait $helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${data.token}/sendMessage`,\n  body: {\n    chat_id: data.chatId,\n    text: '✏️ *Change Text*\\n\\nSend the new text in one of these formats:\\n\\n`TEXT PostID Your new caption here`\\n`HOOK PostID Your new hook here`\\n\\nExamples:\\n`TEXT IMG-20260323-001 New caption text for this post`\\n`HOOK CAR-20260324-001 New hook that grabs attention`',\n    parse_mode: 'Markdown'\n  },\n  headers: { 'Content-Type': 'application/json' }\n});\nreturn [{ json: { asked: 'text', chatId: data.chatId } }];\n"
+      },
+      "id": "b0ab9363-ae16-404d-b231-c8804fec001f",
+      "name": "Ask for Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nawait $helpers.httpRequest({\n  method: 'POST',\n  url: `https://api.telegram.org/bot${data.token}/sendMessage`,\n  body: {\n    chat_id: data.chatId,\n    text: '🔄 *Regenerate Content*\\n\\nSend the Post ID to regenerate:\\n\\n`REGEN PostID`\\n\\nExample:\\n`REGEN IMG-20260323-001`\\n\\nThis will generate completely new content + visuals for that post.',\n    parse_mode: 'Markdown'\n  },\n  headers: { 'Content-Type': 'application/json' }\n});\nreturn [{ json: { asked: 'regen', chatId: data.chatId } }];\n"
+      },
+      "id": "966b0b9d-543e-48ac-883e-d480484776c7",
+      "name": "Ask for Regen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nconst msg = data.messageText;\nconst parts = msg.split(/\\s+/);\nconst postId = parts[1] || '';\nconst imageUrl = parts.slice(2).join(' ').trim();\n\nif (!postId || !imageUrl) {\n  await $helpers.httpRequest({\n    method: 'POST', url: `https://api.telegram.org/bot${data.token}/sendMessage`,\n    body: { chat_id: data.chatId, text: '❌ Invalid format. Use: `IMAGE PostID URL`', parse_mode: 'Markdown' },\n    headers: { 'Content-Type': 'application/json' }\n  });\n  return [{ json: { error: true } }];\n}\n\nreturn [{ json: { postId, imageUrl, token: data.token, chatId: data.chatId } }];\n"
+      },
+      "id": "f6ea639c-e856-48e0-b5b4-377a4e815539",
+      "name": "Process Image Change",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "options": {}
+      },
+      "id": "9abcaaa8-3de5-436d-8493-be058a2cd659",
+      "name": "Read Post for Image",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1240,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst imgData = $('Process Image Change').first().json;\nconst postId = imgData.postId;\nconst newImageUrl = imgData.imageUrl;\nconst cal = $input.all().map(i => i.json);\nconst post = cal.find(r => r.PostID === postId);\n\nif (!post) {\n  await $helpers.httpRequest({\n    method: 'POST', url: `https://api.telegram.org/bot${imgData.token}/sendMessage`,\n    body: { chat_id: imgData.chatId, text: `❌ Post ID \\`${postId}\\` not found.`, parse_mode: 'Markdown' },\n    headers: { 'Content-Type': 'application/json' }\n  });\n  return [{ json: { error: true } }];\n}\n\nconst templateId = post['Preferred Template'] || '';\nlet templateUuid = '';\nconst match = templateId.match(/\\(Id:([^)]+)\\)/i) || templateId.match(/\\(([a-f0-9\\-]{36})\\)/i);\nif (match) templateUuid = match[1].trim();\n\nconst contentType = (post.ContentType || '').toLowerCase().replace(/\\s+/g, '_');\n\nreturn [{\n  json: {\n    postId,\n    contentType,\n    templateUuid,\n    newImageUrl,\n    hook: post.Hook || '',\n    caption: post.Caption || '',\n    topic: post.Topic || '',\n    token: imgData.token,\n    chatId: imgData.chatId,\n    oldVisualUrl: post.Visual_URL || ''\n  }\n}];\n"
+      },
+      "id": "9b2b6f88-5cfe-4352-8ee4-8865204aca38",
+      "name": "Prepare Placid Rerender",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.placid.app/api/rest/images",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "placidApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ template_uuid: $json.templateUuid, layers: { media: { image: $json.newImageUrl }, headline: { text: $json.hook }, subtext: { text: ($json.caption || \"\").substring(0, 30) } }, create_now: true }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "b6bb7989-e0b0-4cd4-a356-d8a656a52108",
+      "name": "Placid Rerender Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        400
+      ],
+      "credentials": {
+        "placidApi": {
+          "id": "Amt8FHm0CG8hpNdq",
+          "name": "Placid account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst prep = $('Prepare Placid Rerender').first().json;\nconst render = $input.first().json;\nconst renderUrl = render.image_url || render.download_url || '';\nconst postId = prep.postId;\nconst token = prep.token;\nconst chatId = prep.chatId;\n\n// Update calendar\n// (We'll do this via a separate GSheets node)\n\n// Send updated visual to Telegram\nlet msg = `🖼️ *Image Updated!*\\n\\n📌 Post: \\`${postId}\\`\\n`;\nif (renderUrl) {\n  msg += `✅ New visual rendered successfully\\n🔗 ${renderUrl}\\n`;\n} else {\n  msg += `⚠️ Render may still be processing\\n`;\n}\nmsg += `\\nClick below to approve or make more changes.`;\n\nconst keyboard = {\n  inline_keyboard: [\n    [\n      { text: '✅ Approve & Schedule', callback_data: `approve_all|${postId}` },\n      { text: '✏️ More Changes', callback_data: `change_image|${postId}` }\n    ]\n  ]\n};\n\nawait $helpers.httpRequest({\n  method: 'POST', url: `https://api.telegram.org/bot${token}/sendMessage`,\n  body: { chat_id: chatId, text: msg, parse_mode: 'Markdown', reply_markup: keyboard },\n  headers: { 'Content-Type': 'application/json' }\n});\n\nreturn [{ json: { postId, renderUrl, oldUrl: prep.oldVisualUrl, updated: true } }];\n"
+      },
+      "id": "31ca7e97-beef-45f1-bb8b-d4c70f9a873f",
+      "name": "Send Updated Image",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.postId }}",
+            "Visual_URL": "={{ $json.renderUrl }}",
+            "OriginalVisualURL": "={{ $json.oldUrl }}",
+            "ApprovalStatus": "changes_applied"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Visual_URL",
+              "displayName": "Visual_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "OriginalVisualURL",
+              "displayName": "OriginalVisualURL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ApprovalStatus",
+              "displayName": "ApprovalStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8d762046-d2f3-4fe1-aaf8-71f7ed6b5171",
+      "name": "Update Calendar Image",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        400
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nconst msg = data.messageText;\nconst upper = msg.toUpperCase();\nconst isHook = upper.startsWith('HOOK ');\nconst parts = msg.split(/\\s+/);\nconst postId = parts[1] || '';\nconst newText = parts.slice(2).join(' ').trim();\nconst field = isHook ? 'hook' : 'caption';\n\nif (!postId || !newText) {\n  await $helpers.httpRequest({\n    method: 'POST', url: `https://api.telegram.org/bot${data.token}/sendMessage`,\n    body: { chat_id: data.chatId, text: '❌ Invalid format. Use: `TEXT PostID your text` or `HOOK PostID your hook`', parse_mode: 'Markdown' },\n    headers: { 'Content-Type': 'application/json' }\n  });\n  return [{ json: { error: true } }];\n}\n\nreturn [{ json: { postId, newText, field, token: data.token, chatId: data.chatId } }];\n"
+      },
+      "id": "c9090057-0ee9-42f6-941b-9e9bae500714",
+      "name": "Process Text Change",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:\"gpt-4\",messages:[{role:\"system\",content:\"You are an Instagram content editor for a beauty brand. Refine the given text: fix grammar, match professional yet warm tone, ensure it is concise. Return ONLY the refined text, nothing else.\"},{role:\"user\",content:\"Refine this Instagram \" + $json.field + \": \" + $json.newText}],temperature:0.5,max_tokens:500}) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "d305c564-8f20-4aba-8b7d-74c2aef50947",
+      "name": "AI Text Refiner",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        600
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst textData = $('Process Text Change').first().json;\nconst aiResp = $input.first().json;\n\nlet refinedText = textData.newText; // fallback to original\ntry {\n  refinedText = aiResp.choices[0].message.content.trim();\n} catch(e) {}\n\nreturn [{\n  json: {\n    postId: textData.postId,\n    field: textData.field,\n    originalText: textData.newText,\n    refinedText,\n    token: textData.token,\n    chatId: textData.chatId\n  }\n}];\n"
+      },
+      "id": "e665d5a3-77f2-401f-b9c3-8bde7b81d29a",
+      "name": "Parse Refined Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "options": {}
+      },
+      "id": "77be2964-b400-4745-91a9-48094c2ea4a5",
+      "name": "Read Post for Text",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1720,
+        600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst textData = $('Parse Refined Text').first().json;\nconst cal = $input.all().map(i => i.json);\nconst post = cal.find(r => r.PostID === textData.postId);\n\nif (!post) {\n  await $helpers.httpRequest({\n    method: 'POST', url: `https://api.telegram.org/bot${textData.token}/sendMessage`,\n    body: { chat_id: textData.chatId, text: `❌ Post \\`${textData.postId}\\` not found.`, parse_mode: 'Markdown' },\n    headers: { 'Content-Type': 'application/json' }\n  });\n  return [{ json: { error: true } }];\n}\n\nlet templateUuid = '';\nconst tpl = post['Preferred Template'] || '';\nconst m = tpl.match(/\\(Id:([^)]+)\\)/i) || tpl.match(/\\(([a-f0-9\\-]{36})\\)/i);\nif (m) templateUuid = m[1].trim();\n\nconst newHook = textData.field === 'hook' ? textData.refinedText : (post.Hook || '');\nconst newCaption = textData.field === 'caption' ? textData.refinedText : (post.Caption || '');\n\nreturn [{\n  json: {\n    postId: textData.postId,\n    templateUuid,\n    newHook,\n    newCaption,\n    field: textData.field,\n    refinedText: textData.refinedText,\n    originalText: textData.originalText,\n    visualUrl: post.Visual_URL || '',\n    token: textData.token,\n    chatId: textData.chatId\n  }\n}];\n"
+      },
+      "id": "103d18a0-785e-4a99-a4eb-d7c85bc313a0",
+      "name": "Prepare Text Rerender",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.placid.app/api/rest/images",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "placidApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ template_uuid: $json.templateUuid, layers: { headline: { text: $json.newHook }, subtext: { text: ($json.newCaption || \"\").substring(0, 30) } }, create_now: true }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "088a0f13-42c8-4491-8c37-23e95d8cf5d2",
+      "name": "Placid Rerender Text",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        600
+      ],
+      "credentials": {
+        "placidApi": {
+          "id": "Amt8FHm0CG8hpNdq",
+          "name": "Placid account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst prep = $('Prepare Text Rerender').first().json;\nconst render = $input.first().json;\nconst renderUrl = render.image_url || render.download_url || '';\n\nlet msg = `✏️ *Text Updated + Re-rendered!*\\n\\n`;\nmsg += `📌 Post: \\`${prep.postId}\\`\\n`;\nmsg += `📝 Field: ${prep.field}\\n`;\nmsg += `🤖 AI refined: \"${prep.refinedText.substring(0, 80)}${prep.refinedText.length > 80 ? '...' : ''}\"\\n`;\nif (renderUrl) msg += `🖼️ New visual: ${renderUrl}\\n`;\nmsg += `\\nClick below to approve or make more changes.`;\n\nconst keyboard = {\n  inline_keyboard: [\n    [\n      { text: '✅ Approve & Schedule', callback_data: `approve_all|${prep.postId}` },\n      { text: '✏️ More Changes', callback_data: `change_text|${prep.postId}` }\n    ]\n  ]\n};\n\nawait $helpers.httpRequest({\n  method: 'POST', url: `https://api.telegram.org/bot${prep.token}/sendMessage`,\n  body: { chat_id: prep.chatId, text: msg, parse_mode: 'Markdown', reply_markup: keyboard },\n  headers: { 'Content-Type': 'application/json' }\n});\n\nreturn [{ json: { postId: prep.postId, renderUrl, field: prep.field, refinedText: prep.refinedText, originalCaption: prep.field === 'caption' ? prep.originalText : '', originalHook: prep.field === 'hook' ? prep.originalText : '' } }];\n"
+      },
+      "id": "9feecae3-aa7c-4f76-9b38-e79dd82bfdac",
+      "name": "Send Updated Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.postId }}",
+            "Caption": "={{ $json.field === 'caption' ? $json.refinedText : '' }}",
+            "Hook": "={{ $json.field === 'hook' ? $json.refinedText : '' }}",
+            "Visual_URL": "={{ $json.renderUrl }}",
+            "OriginalCaption": "={{ $json.originalCaption }}",
+            "ApprovalStatus": "changes_applied"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Visual_URL",
+              "displayName": "Visual_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "OriginalCaption",
+              "displayName": "OriginalCaption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ApprovalStatus",
+              "displayName": "ApprovalStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "90dc96b3-a957-4393-bd98-ee24a64efda4",
+      "name": "Update Calendar Text",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2680,
+        600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst data = $('Parse Incoming').first().json;\nconst parts = data.messageText.split(/\\s+/);\nconst postId = parts[1] || '';\n\nif (!postId) {\n  await $helpers.httpRequest({\n    method: 'POST', url: `https://api.telegram.org/bot${data.token}/sendMessage`,\n    body: { chat_id: data.chatId, text: '❌ Invalid format. Use: `REGEN PostID`', parse_mode: 'Markdown' },\n    headers: { 'Content-Type': 'application/json' }\n  });\n  return [{ json: { error: true } }];\n}\n\nreturn [{ json: { postId, token: data.token, chatId: data.chatId } }];\n"
+      },
+      "id": "22f412df-671e-495d-860f-8ee1f7b867b9",
+      "name": "Process Regen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "options": {}
+      },
+      "id": "50213268-6255-4442-bba6-33a437035ae0",
+      "name": "Read Post for Regen",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1240,
+        800
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst regenData = $('Process Regen').first().json;\nconst cal = $input.all().map(i => i.json);\nconst post = cal.find(r => r.PostID === regenData.postId);\n\nif (!post) {\n  return [{ json: { error: true, postId: regenData.postId } }];\n}\n\nreturn [{\n  json: {\n    postId: regenData.postId,\n    contentType: post.ContentType || 'single_image',\n    pillar: post.Pillar || 'Education',\n    day: post.Day || 'Monday',\n    topic: post.Topic || '',\n    templateUuid: '',\n    token: regenData.token,\n    chatId: regenData.chatId\n  }\n}];\n"
+      },
+      "id": "0c176e87-8d37-4174-af26-999478c66536",
+      "name": "Prepare Regen Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1480,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:\"gpt-4\",messages:[{role:\"system\",content:\"You are an Instagram content strategist for a beauty brand. Generate fresh content. Return ONLY valid JSON with fields: topic, hook, caption, hashtags (array), callToAction, visualDirection.\"},{role:\"user\",content:\"Generate a new \" + $json.contentType + \" post for \" + $json.day + \". Pillar: \" + $json.pillar + \". Previous topic was: \" + $json.topic + \" - create something DIFFERENT.\"}],temperature:0.8,max_tokens:1000}) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "b77e5400-ed2f-4683-88ae-ce5fd9deff4d",
+      "name": "AI Regenerate Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        800
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "sOsttgQQwe5dI02P",
+          "name": "OpenAi account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst prep = $('Prepare Regen Prompt').first().json;\nconst aiResp = $input.first().json;\n\nlet newContent = {};\ntry {\n  const text = aiResp.choices[0].message.content;\n  const jsonMatch = text.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) newContent = JSON.parse(jsonMatch[0]);\n} catch(e) {\n  newContent = { topic: 'Regenerated', hook: 'Fresh content', caption: 'New post content', hashtags: [], callToAction: 'Learn more' };\n}\n\n// Notify via Telegram\nlet msg = `🔄 *Content Regenerated!*\\n\\n`;\nmsg += `📌 Post: \\`${prep.postId}\\`\\n`;\nmsg += `📝 New Topic: ${newContent.topic || 'N/A'}\\n`;\nmsg += `🎣 New Hook: ${(newContent.hook || '').substring(0, 60)}\\n`;\nmsg += `📊 Caption: ${(newContent.caption || '').split(/\\s+/).length} words\\n\\n`;\nmsg += `⏳ Visual is being re-rendered...\\nYou'll receive the updated preview shortly.`;\n\nconst keyboard = {\n  inline_keyboard: [\n    [\n      { text: '✅ Approve & Schedule', callback_data: `approve_all|${prep.postId}` },\n      { text: '🔄 Regenerate Again', callback_data: `regenerate|${prep.postId}` }\n    ]\n  ]\n};\n\nawait $helpers.httpRequest({\n  method: 'POST', url: `https://api.telegram.org/bot${prep.token}/sendMessage`,\n  body: { chat_id: prep.chatId, text: msg, parse_mode: 'Markdown', reply_markup: keyboard },\n  headers: { 'Content-Type': 'application/json' }\n});\n\nreturn [{\n  json: {\n    postId: prep.postId,\n    newTopic: newContent.topic || '',\n    newHook: newContent.hook || '',\n    newCaption: newContent.caption || '',\n    newHashtags: JSON.stringify(newContent.hashtags || []),\n    newCTA: newContent.callToAction || '',\n    newVisualDirection: newContent.visualDirection || ''\n  }\n}];\n"
+      },
+      "id": "b10480a6-91cd-421f-92cb-e6ee701f3de9",
+      "name": "Parse Regen + Notify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.postId }}",
+            "Topic": "={{ $json.newTopic }}",
+            "Hook": "={{ $json.newHook }}",
+            "Caption": "={{ $json.newCaption }}",
+            "Hashtags": "={{ $json.newHashtags }}",
+            "CTA": "={{ $json.newCTA }}",
+            "VisualBrief": "={{ $json.newVisualDirection }}",
+            "ApprovalStatus": "regenerated"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "VisualBrief",
+              "displayName": "VisualBrief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ApprovalStatus",
+              "displayName": "ApprovalStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "72c39441-c8c2-445e-a962-f4b3dd3487f5",
+      "name": "Update Calendar Regen",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        800
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Ox9S2oRJPDdO3Xfw",
+          "name": "Google Sheets Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ok: true}) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "5de3e632-333f-4153-a774-313781dec7ea",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Webhook": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Config": {
+      "main": [
+        [
+          {
+            "node": "Parse Incoming",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Incoming": {
+      "main": [
+        [
+          {
+            "node": "Route by Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Action": {
+      "main": [
+        [
+          {
+            "node": "Approve All",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for Image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask for Regen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process Image Change",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process Text Change",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Process Regen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approve All": {
+      "main": [
+        [
+          {
+            "node": "Read Calendar for Approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar for Approve": {
+      "main": [
+        [
+          {
+            "node": "Mark Posts Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Posts Approved": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Approved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Approved": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask for Image": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask for Text": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask for Regen": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Image Change": {
+      "main": [
+        [
+          {
+            "node": "Read Post for Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Post for Image": {
+      "main": [
+        [
+          {
+            "node": "Prepare Placid Rerender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Placid Rerender": {
+      "main": [
+        [
+          {
+            "node": "Placid Rerender Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placid Rerender Image": {
+      "main": [
+        [
+          {
+            "node": "Send Updated Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Updated Image": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Image": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Text Change": {
+      "main": [
+        [
+          {
+            "node": "AI Text Refiner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Text Refiner": {
+      "main": [
+        [
+          {
+            "node": "Parse Refined Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Refined Text": {
+      "main": [
+        [
+          {
+            "node": "Read Post for Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Post for Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text Rerender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Text Rerender": {
+      "main": [
+        [
+          {
+            "node": "Placid Rerender Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placid Rerender Text": {
+      "main": [
+        [
+          {
+            "node": "Send Updated Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Updated Text": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Text": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Regen": {
+      "main": [
+        [
+          {
+            "node": "Read Post for Regen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Post for Regen": {
+      "main": [
+        [
+          {
+            "node": "Prepare Regen Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Regen Prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Regenerate Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Regenerate Content": {
+      "main": [
+        [
+          {
+            "node": "Parse Regen + Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Regen + Notify": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Regen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Regen": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

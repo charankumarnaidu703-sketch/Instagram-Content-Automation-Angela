@@ -1,0 +1,1652 @@
+{
+  "name": "Visual Creation Engine (Weekly Batch - Templated.io)",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  EXPAND CONTENT TEMPLATES — v5\n//  Universal template matching for all content types\n//  Supports: carousel pages, reel scenes, story variants, etc.\n// ============================================================\n\nconst allItems = $('Prepare Visual Requests').all().map(i => i.json);\nconst allTemplates = $input.all().map(i => i.json).filter(t => t.uuid);\n\nconsole.log('Total Placid templates loaded: ' + allTemplates.length);\n\n// ── CONFIGURATION: Define matching patterns per content type ──\nconst contentTypeConfig = {\n  carousel: {\n    pattern: /\\(page-(\\d+)\\)/i,\n    multiTemplate: true,\n    sortKey: 'pageNum'\n  },\n  reel: {\n    pattern: /\\(scene-(\\d+)\\)/i,\n    multiTemplate: true,\n    sortKey: 'sceneNum',\n    fallbackToSingle: true\n  },\n  single_image: {\n    pattern: /\\(variant-([a-z0-9]+)\\)/i,\n    multiTemplate: false,\n    sortKey: null\n  },\n  story: {\n    pattern: /\\(version-(\\d+)\\)/i,\n    multiTemplate: false,\n    sortKey: null,\n    fallbackToSingle: true\n  }\n};\n\n// ── HELPER: Normalize string for fuzzy matching ──\nconst normalizeStr = s => s.toLowerCase().replace(/\\s+/g, '').trim();\n\n// ── HELPER: Find templates matching a name pattern ──\nfunction findMatchingTemplates(templateName, contentType, allTemplates) {\n  const config = contentTypeConfig[contentType];\n\n  if (!config) {\n    return { templates: [], totalItems: 0 };\n  }\n\n  const normalizedInput = normalizeStr(templateName);\n  console.log(`[${contentType}] Looking for: \"${templateName}\"`);\n\n  const matchedTemplates = allTemplates\n    .filter(t => {\n      const title = (t.title || t.name || '').trim();\n      const normalizedTitle = normalizeStr(title);\n\n      const hasPattern = config.pattern.test(title);\n\n      if (config.multiTemplate && !hasPattern) return false;\n\n      const baseName = title.replace(config.pattern, '').trim();\n      const normalizedBase = normalizeStr(baseName);\n\n      const matched = normalizedBase === normalizedInput;\n      if (matched) console.log(`  ✅ Matched: \"${title}\"`);\n      return matched;\n    })\n    .map(t => {\n      const title = (t.title || t.name || '').trim();\n      const match = title.match(config.pattern);\n\n      const sequenceValue = match ? (\n        isNaN(match[1]) ? match[1] : parseInt(match[1])\n      ) : 0;\n\n      return {\n        sequenceNum: sequenceValue,\n        uuid: t.uuid,\n        name: title,\n        layers: t.layers || [],\n        [config.sortKey || 'index']: sequenceValue\n      };\n    })\n    .filter(t => t.uuid);\n\n  if (config.multiTemplate && config.sortKey) {\n    matchedTemplates.sort((a, b) => a.sequenceNum - b.sequenceNum);\n  }\n\n  console.log(`  Found ${matchedTemplates.length} template(s)`);\n\n  // ── FALLBACK: Try exact name match if no pattern matches found ──\n  if (matchedTemplates.length === 0 && config.fallbackToSingle) {\n    console.log(`  ⚠️ No pattern matches, trying exact name match...`);\n\n    const exactMatch = allTemplates.find(t => {\n      const title = (t.title || t.name || '').trim();\n      return normalizeStr(title) === normalizedInput;\n    });\n\n    if (exactMatch) {\n      console.log(`  ✅ Found exact match: \"${exactMatch.title || exactMatch.name}\"`);\n      return {\n        templates: [{\n          sequenceNum: 1,\n          uuid: exactMatch.uuid,\n          name: exactMatch.title || exactMatch.name,\n          layers: exactMatch.layers || []\n        }],\n        totalItems: 1\n      };\n    }\n  }\n\n  return {\n    templates: matchedTemplates,\n    totalItems: config.multiTemplate ? matchedTemplates.length : (matchedTemplates.length > 0 ? 1 : 0)\n  };\n}\n\n// ── MAIN PROCESSING ──\nconst results = [];\n\nfor (const item of allItems) {\n  const { contentType, templateName } = item;\n\n  if (templateName && templateName.trim() !== '') {\n    const { templates, totalItems } = findMatchingTemplates(\n      templateName.trim(),\n      contentType,\n      allTemplates\n    );\n\n    if (templates.length === 0) {\n      console.log(`⚠️ No templates found for ${contentType}: \"${templateName}\"`);\n    }\n\n    if (contentType === 'carousel') {\n      // ── One output object per slide, with only that slide's template ──\n      for (const template of templates) {\n        results.push({\n          json: {\n            ...item,\n            slideNum: template.sequenceNum,\n            totalSlides: totalItems,\n            templateId: template.uuid,\n            currentTemplate: template,\n          }\n        });\n      }\n\n    } else if (contentType === 'reel') {\n      results.push({\n        json: {\n          ...item,\n          templates,\n          totalScenes: totalItems,\n          templateId: templates.length > 0 ? templates[0].uuid : item.templateId\n        }\n      });\n\n    } else {\n      // single_image, story, etc.\n      results.push({\n        json: {\n          ...item,\n          matchedTemplate: templates.length > 0 ? templates[0] : null,\n          templateId: templates.length > 0 ? templates[0].uuid : item.templateId\n        }\n      });\n    }\n\n  } else {\n    // No template name - pass through unchanged\n    results.push({ json: item });\n  }\n}\n\nconsole.log(`\\n✅ Processed ${results.length} items`);\nreturn results;"
+      },
+      "id": "f7ee5112-7c3b-4589-8d5c-86909999f2ad",
+      "name": "Expand Carousel Pages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "route-reel-001",
+              "leftValue": "={{ $json.contentType }}",
+              "rightValue": "reel",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8fc019c9-dc0c-45be-ae50-ae9ed8ba62fd",
+      "name": "Route by Content Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -192,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.placid.app/api/rest/images",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "placidApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "bd61e41e-3dd0-49b6-baca-247b11d56512",
+      "name": "Placid Render Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        16
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": false,
+      "credentials": {
+        "placidApi": {
+          "id": "Amt8FHm0CG8hpNdq",
+          "name": "Placid account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.placid.app/api/rest/videos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "placidApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "07960a95-07a2-404a-b136-e0a2025ed04c",
+      "name": "Placid Render Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        -176
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "placidApi": {
+          "id": "Amt8FHm0CG8hpNdq",
+          "name": "Placid account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.polling_url || ('https://api.placid.app/api/rest/videos/' + $json.id) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "placidApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "d0ba2576-409f-4452-84e8-48d31219578b",
+      "name": "Placid Poll Video Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        -176
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "placidApi": {
+          "id": "fq7pWEXUWcBKAtZL",
+          "name": "Placid account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "633ead40-dd2c-47a9-8331-2c17d00b07bc",
+      "name": "Sunday 8PM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3424,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3200,
+        -16
+      ],
+      "id": "4bf57e65-0aeb-4d46-bfc9-1f24a822ba19",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "options": {}
+      },
+      "id": "88d1e6b9-002c-40fc-a5b7-f83e824d2131",
+      "name": "Read Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2976,
+        -16
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  CREATIVE REQUEST BUILDER — v2\n//  + Media URLs: parsed, classified, and attached to each request\n// ============================================================\n\nconst items = $input.all();\nconst data = $('Read Calendar').all().map(i => {\n  const j = i.json;\n  j._type = (j.ContentType || '')\n    .toLowerCase()\n    .trim()\n    .replace(/\\s+/g, '_');\n  return j;\n});\n\nfunction extractTemplateId(preferredTemplate) {\n  if (!preferredTemplate) return null;\n  const matchWithId = preferredTemplate.match(/\\(Id:([^)]+)\\)/i);  // Add 'i' flag here\n  if (matchWithId) return matchWithId[1].trim();\n  const matchDirect = preferredTemplate.match(/\\(([a-f0-9\\-]{36})\\)/i);\n  if (matchDirect) return matchDirect[1].trim();\n  return null;\n}\nfunction extractTemplateName(preferredTemplate) {\n  if (!preferredTemplate || !preferredTemplate.toString().trim()) return '';\n  return preferredTemplate\n    .toString()\n    .replace(/\\(Id:[^)]+\\)/i, '')\n    .replace(/\\([a-f0-9\\-]{36}\\)/i, '')\n    .replace(/\\([a-z0-9]+\\)/i, '')\n    .trim();\n}\n\nfunction extractDuration(preferredTemplate) {\n  if (!preferredTemplate) return null;\n  const match = preferredTemplate.match(/\\(Duration:([^)]+)\\)/i);\n  return match ? match[1].trim() : null;\n}\n\nfunction parseMediaUrls(raw) {\n  if (!raw || !raw.toString().trim()) {\n    return { useDefaultMedia: true };\n  }\n  const urls = raw\n    .toString()\n    .split(/[,;\\n|]+/)\n    .map(u => u.trim())\n    .filter(u => u.length > 0 && u.startsWith('http'));\n  if (urls.length === 0) {\n    return { useDefaultMedia: true };\n  }\n  const result = { useDefaultMedia: false };\n  urls.forEach((url, i) => {\n    result[`media_url_${i + 1}`] = url;\n  });\n  result.totalMediaUrls = urls.length;\n  return result;\n}\n\nconst images    = data.filter(d => d._type === 'single_image');\nconst carousels = data.filter(d => d._type === 'carousel');\nconst reels     = data.filter(d => d._type === 'reel');\nconst stories   = data.filter(d => d._type === 'story');\n\nconst tpl = {\n  single_image: {\n    Education:   'YOUR_SINGLE_IMG_EDU_TEMPLATE_ID',\n    Inspiration: 'YOUR_SINGLE_IMG_INS_TEMPLATE_ID',\n    Promotion:   'YOUR_SINGLE_IMG_PRO_TEMPLATE_ID'\n  },\n  carousel: {\n    Education:   'YOUR_CAROUSEL_EDU_TEMPLATE_ID',\n    Inspiration: 'YOUR_CAROUSEL_INS_TEMPLATE_ID',\n    Promotion:   'YOUR_CAROUSEL_PRO_TEMPLATE_ID'\n  },\n  reel: {\n    Education:   'YOUR_REEL_EDU_TEMPLATE_ID',\n    Inspiration: 'YOUR_REEL_INS_TEMPLATE_ID',\n    Promotion:   'YOUR_REEL_PRO_TEMPLATE_ID'\n  },\n  story: {\n    Poll:         'YOUR_STORY_POLL_TEMPLATE_ID',\n    Question:     'YOUR_STORY_QST_TEMPLATE_ID',\n    Quote:        'YOUR_STORY_QTE_TEMPLATE_ID',\n    BTS:          'YOUR_STORY_BTS_TEMPLATE_ID',\n    Image:        'YOUR_STORY_IMG_TEMPLATE_ID',\n    Tip:          'YOUR_STORY_TIP_TEMPLATE_ID',\n    Video:        'YOUR_STORY_VID_TEMPLATE_ID',\n    Quiz:         'YOUR_STORY_QIZ_TEMPLATE_ID',\n    Motivational: 'YOUR_STORY_MOT_TEMPLATE_ID'\n  }\n};\n\nconst weekDate = images.length\n  ? images[0].ScheduledDate\n  : (stories.length ? stories[0].ScheduledDate : 'unknown');\n\nconst requests = [];\n\n// ════ SINGLE IMAGES ════\nimages.forEach(img => {\n  const templateId = extractTemplateId(img['Preferred Template'])\n    || tpl.single_image[img.Pillar]\n    || tpl.single_image.Education;\n  const templateName = extractTemplateName(img['Preferred Template']);\n  const mediaUrls = parseMediaUrls(img['Media Urls']);\n  requests.push({\n    postId:       img.PostID,\n    contentType:  'single_image',\n    templateId,\n    templateName,\n    day:          img.Day,\n    topic:        img.Topic       || '',\n    hook:         img.Hook        || '',\n    caption:      img.Caption     || '',\n    hashtags:     img.Hashtags    || '',\n    cta:          img.CTA         || '',\n    visualBrief:  img.VisualBrief || '',\n    layers: {\n      headline: { text: (img.Hook || '').substring(0, 60) },\n      subtext:  { text: (img.SlideText || '').substring(0, 30) }\n    },\n    mediaUrls,\n    fileName:     img.PostID + '_single.jpg',\n    format:       'jpg',\n    folderName:   'SingleImage_Week_' + weekDate,\n    pillar:       img.Pillar || ''\n  });\n});\n\n// ════ CAROUSELS ════\ncarousels.forEach(car => {\n  const templateId = extractTemplateId(car['Preferred Template'])\n    || tpl.carousel[car.Pillar]\n    || tpl.carousel.Education;\n  const templateName = extractTemplateName(car['Preferred Template']);\n  const mediaUrls = parseMediaUrls(car['Media Urls']);\n  let slides = [];\n  try {\n    slides = JSON.parse(car.SlideDetails || '[]');\n  } catch (e) {\n    slides = [];\n  }\n  if (!Array.isArray(slides) || !slides.length) {\n    slides = [{ slideNum: 1, title: car.Hook || 'Slide 1', description: '' }];\n  }\n  slides.forEach((sl, i) => {\n    const slideMediaKey = `media_url_${i + 1}`;\n    const slideMedia = mediaUrls.useDefaultMedia\n      ? { useDefaultMedia: true }\n      : mediaUrls[slideMediaKey]\n        ? { useDefaultMedia: false, media_url_1: mediaUrls[slideMediaKey] }\n        : { useDefaultMedia: true };\n    requests.push({\n      postId:       car.PostID,\n      contentType:  'carousel',\n      slideNum:     i + 1,\n      totalSlides:  slides.length,\n      templateId,\n      templateName,\n      day:          car.Day,\n      topic:        car.Topic       || '',\n      hook:         car.Hook        || '',\n      caption:      car.Caption     || '',\n      hashtags:     car.Hashtags    || '',\n      cta:          car.CTA         || '',\n      visualBrief:  car.VisualBrief || '',\n      layers: {\n        slide_title:  { text: (sl.title || 'Slide ' + (i + 1)).substring(0, 60) },\n        slide_body:   { text: (sl.description || '').substring(0, 100) },\n        slide_number: { text: (i + 1) + ' of ' + slides.length }\n      },\n      mediaUrls:    slideMedia,\n      allMediaUrls: mediaUrls,\n      fileName:     car.PostID + '_slide_' + String(i + 1).padStart(2, '0') + '.jpg',\n      format:       'jpg',\n      folderName:   'Carousels_Week_' + weekDate,\n      pillar:       car.Pillar || ''\n    });\n  });\n});\n\n// ════ REELS ════\nreels.forEach(rel => {\n  const templateId = extractTemplateId(rel['Preferred Template'])\n    || tpl.reel[rel.Pillar]\n    || tpl.reel.Education;\n  const templateName = extractTemplateName(rel['Preferred Template']);\n  const mediaUrls = parseMediaUrls(rel['Media Urls']);\n  const duration  = extractDuration(rel['Preferred Template']);\n  const reelLayers = {\n    scene1_text: { text: (rel.Hook || 'Hook').substring(0, 60) },\n    scene2_text: { text: 'Setup' },\n    scene3_text: { text: 'Value' },\n    scene4_text: { text: (rel.CTA || 'Follow!').substring(0, 40) }\n  };\n  let scenes = [];\n  try {\n    scenes = JSON.parse(rel.SceneBreakdown || '[]');\n  } catch (e) {}\n  if (scenes.length >= 4) {\n    reelLayers.scene2_text.text = (scenes[1].action || 'Setup').substring(0, 60);\n    reelLayers.scene3_text.text = (scenes[2].action || 'Value').substring(0, 60);\n  }\n  requests.push({\n    postId:       rel.PostID,\n    contentType:  'reel',\n    templateId,\n    templateName,\n    day:          rel.Day,\n    topic:        rel.Topic       || '',\n    hook:         rel.Hook        || '',\n    caption:      rel.Caption     || '',\n    hashtags:     rel.Hashtags    || '',\n    cta:          rel.CTA         || '',\n    visualBrief:  rel.VisualBrief || '',\n    layers:       reelLayers,\n    duration,\n    mediaUrls,\n    fileName:     rel.PostID + '_reel.mp4',\n    format:       'mp4',\n    folderName:   'Reels_Week_' + weekDate,\n    pillar:       rel.Pillar || ''\n  });\n});\n\n// ════ STORIES ════\nstories.forEach(st => {\n  const templateId = extractTemplateId(st['Preferred Template'])\n    || tpl.story[st.StoryType]\n    || tpl.story.Image;\n  const templateName = extractTemplateName(st['Preferred Template']);\n  const mediaUrls = parseMediaUrls(st['Media Urls']);\n  requests.push({\n    postId:       st.PostID,\n    contentType:  'story',\n    templateId,\n    templateName,\n    day:          st.Day,\n    topic:        st.Topic       || '',\n    hook:         st.Hook        || '',\n    caption:      st.Caption     || '',\n    hashtags:     st.Hashtags    || '',\n    cta:          st.CTA         || '',\n    visualBrief:  st.VisualBrief || '',\n    pillar:       st.Pillar      || '',\n    storyType:    st.StoryType          || 'Image',\n    mainText:     st.MainText           || '',\n    supportText:  st.SupportText        || '',\n    background:   st.Background         || '',\n    feedLink:     st.FeedPostConnection || '',\n    layers: {\n      main_text:    { text: (st.MainText    || 'Story').substring(0, 50) },\n      support_text: { text: (st.SupportText || '').substring(0, 30) }\n    },\n    interactiveElement: (() => {\n      try { return JSON.parse(st.InteractiveElement || '{}'); } catch(e) { return {}; }\n    })(),\n    mediaUrls,\n    fileName:     st.PostID + '.jpg',\n    format:       'jpg',\n    folderName:   'Stories_Week_' + weekDate\n  });\n});\n\nreturn requests.map(r => ({ json: r }));"
+      },
+      "id": "c7fed479-4fa4-4246-87f9-dee3a5d417a5",
+      "name": "Prepare Visual Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2752,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7b6718c1-f13d-421e-9a46-4fecdcbf897e",
+      "name": "Process Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1664,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const inp = $input.all();\nconst results = [];\n\nfor (const item of inp) {\n  try {\n    const json        = item.json;\n    const fileName    = json.fileName || '';\n    const isUrl       = fileName.startsWith('http://') || fileName.startsWith('https://');\n    const contentType = (json.contentType || '').toLowerCase();\n\n    const filteredData = {\n      topic:       json.topic       || '',\n      hook:        json.hook        || '',\n      caption:     json.caption     || '',\n      cta:         json.cta         || '',\n      visualBrief: json.visualBrief || '',\n      filename:    isUrl ? fileName : 'no file is provided'\n    };\n\n    if (contentType === 'reel') {\n      filteredData.duration = json.duration || 'use_template_default';\n    }\n\n    results.push({\n      json: {\n        stringified: JSON.stringify(filteredData, null, 2)\n      }\n    });\n\n  } catch (error) {\n    console.error('Failed to process item:', error);\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1440,
+        -80
+      ],
+      "id": "3ccfee6b-9721-4e00-a220-16d66686919a",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  CODE IN JAVASCRIPT — v2\n//  Outputs RAW JSON items (no stringification)\n// ============================================================\n\nconst loopItem    = $('Process Items').item.json;\nconst contentType = (loopItem.contentType || '').toLowerCase();\n\nconst placidTemplateData = $input.all().map(i => i.json);\n\nconst results = [];\n\n// ── CAROUSEL with templates array ──\nif (\n  contentType === 'carousel' &&\n  Array.isArray(loopItem.templates) &&\n  loopItem.templates.length > 0\n) {\n  for (const pageTemplate of loopItem.templates) {\n\n    const { templates, ...itemWithoutTemplates } = loopItem;\n\n    results.push({\n      json: {\n        // ── All original fields (no templates array) ──\n        ...itemWithoutTemplates,\n\n        // ── Updated per-page fields ──\n        slideNum:     pageTemplate.pageNum,\n        totalSlides:  loopItem.templates.length,\n        templateId:   pageTemplate.uuid,\n        templateName: pageTemplate.name,\n        fileName:     loopItem.postId + '_slide_' + String(pageTemplate.pageNum).padStart(2, '0') + '.jpg',\n\n        // ── Single page template object ──\n        template: {\n          pageNum: pageTemplate.pageNum,\n          uuid:    pageTemplate.uuid,\n          name:    pageTemplate.name,\n          layers:  pageTemplate.layers || []\n        },\n\n        // ── Placid API response (raw) ──\n        placidTemplateLayers: placidTemplateData\n      }\n    });\n  }\n\n} else {\n  // ── Non-carousel: pass through as raw item ──\n  results.push({\n    json: {\n      ...loopItem,\n      placidTemplateLayers: placidTemplateData\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1216,
+        -80
+      ],
+      "id": "593b006b-01f7-4060-ba98-d23136568086",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  CLEAN GPT OUTPUT + FORMAT FOR PLACID API\n//  - Images / Stories / Carousel pages → Placid /images body\n//  - Reels → Placid /videos body (clips format)\n//  - preview: true → FREE watermarked test (no credits used)\n//  - Updated for Gemini response format\n// ============================================================\n\nconst items       = $input.all();\nconst contentType = ($('Process Items').item.json.contentType || '').toLowerCase();\nconst templateId  = $('Process Items').item.json.templateId  || '';\nconst duration    = $('Process Items').item.json.duration    || null;\n\nreturn items.map((item, index) => {\n  try {\n\n    // ✅ CHANGED — Gemini format: content.parts[0].text\n    // Ignore thoughtSignature — only use text field\n    const outputText = item.json.content.parts[0].text;\n\n    // Strip markdown code fences\n    let cleanJson = outputText\n      .replace(/```json\\s*/gi, '')\n      .replace(/```javascript\\s*/gi, '')\n      .replace(/```\\s*/g, '')\n      .trim();\n\n    // Extract first JSON object if there is extra text\n    const jsonMatch = cleanJson.match(/\\{[\\s\\S]*\\}/);\n    if (jsonMatch) cleanJson = jsonMatch[0];\n\n    let parsed;\n    try {\n      parsed = JSON.parse(cleanJson);\n    } catch (parseErr) {\n      throw new Error('JSON parse failed: ' + parseErr.message);\n    }\n\n    // Ensure template_uuid is always set\n    if (!parsed.template_uuid && templateId) {\n      parsed.template_uuid = templateId;\n    }\n\n    let bodyObj;\n\n    if (contentType === 'reel') {\n      // ── Placid /videos API: clips array format ──\n      const clip = {\n        template_uuid: parsed.template_uuid || templateId,\n        layers:        parsed.layers || {}\n      };\n      if (duration && duration !== 'use_template_default') {\n        clip.duration = parseInt(duration, 10);\n      }\n      bodyObj = {\n        preview: true,\n        clips:   [clip]\n      };\n\n    } else {\n      // ── Placid /images API: direct format ──\n      bodyObj = {\n        preview:       true,\n        template_uuid: parsed.template_uuid || templateId,\n        layers:        parsed.layers || {},\n        create_now:    true\n      };\n    }\n\n    return {\n      json: {\n        body:        JSON.stringify(bodyObj),\n        contentType: contentType\n      },\n      pairedItem: { item: index }\n    };\n\n  } catch (error) {\n    // ── Fallback bodies (also with preview: true) ──\n    const fallback = contentType === 'reel'\n      ? JSON.stringify({\n          preview: true,\n          clips:   [{ template_uuid: templateId, layers: {} }]\n        })\n      : JSON.stringify({\n          preview:       true,\n          template_uuid: templateId,\n          layers:        {},\n          create_now:    true\n        });\n\n    return {\n      json: {\n        body:        fallback,\n        error:       'Gemini parse failed: ' + error.message,\n        contentType: contentType\n      },\n      pairedItem: { item: index }\n    };\n  }\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -80
+      ],
+      "id": "0fb0c3e6-a6fa-4a0a-838d-e2f6d19a5362",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  TRACK RESULT — v2\n//  Reads aggregated data array, groups by postId\n// ============================================================\n\n// ── Aggregate node wraps everything into a single data[] array ──\nconst aggregatedData = $input.first().json.data || [];\n\n// ── Group all slides/items by postId ──\nconst groupedByPostId = {};\n\nfor (const item of aggregatedData) {\n  const postId   = item.postId   || 'unknown';\n  const slideNum = item.slideNum || 0;\n\n  // ── Extract Drive URL ──\n  let driveUrl = '';\n  if (item.content && item.content.download_url) {\n    driveUrl = item.content.download_url;\n  } else {\n    driveUrl = item.webViewLink || item.webContentLink || '';\n  }\n\n  // ── Extract Drive File ID ──\n  let driveFileId = '';\n  if (item.content && item.content.path) {\n    driveFileId = item.content.path;\n  } else {\n    driveFileId = item.id || '';\n  }\n\n  // ── Init group on first encounter ──\n  if (!groupedByPostId[postId]) {\n    groupedByPostId[postId] = {\n      // Post identification\n      contentType:  item.contentType  || '',\n      totalSlides:  item.totalSlides  || 1,\n\n      // Template info\n      templateId:   item.templateId   || '',\n      templateName: item.templateName || '',\n\n      // Content metadata\n      day:         item.day         || '',\n      topic:       item.topic       || '',\n      pillar:      item.pillar      || '',\n      hook:        item.hook        || '',\n      caption:     item.caption     || '',\n      hashtags:    item.hashtags    || '',\n      cta:         item.cta         || '',\n      visualBrief: item.visualBrief || '',\n\n      // File info\n      folderName: item.folderName || '',\n      format:     item.format     || '',\n\n      slides: []\n    };\n  }\n\n  // ── Push this slide into the group ──\n  groupedByPostId[postId].slides.push({\n    slideNum,\n    fileName:    item.fileName  || '',\n    renderUrl:   item.renderUrl || '',\n    status:      item.status    || 'unknown',\n    driveFileId,\n    driveUrl\n  });\n}\n\n// ── Build final output — one item per postId ──\nconst results = [];\n\nfor (const postId of Object.keys(groupedByPostId)) {\n  const meta = groupedByPostId[postId];\n\n  // Sort slides by slideNum\n  const slides = meta.slides.sort((a, b) => a.slideNum - b.slideNum);\n\n  results.push({\n    json: {\n      // Post identification\n      postId,\n      contentType: meta.contentType,\n      totalSlides: meta.totalSlides,\n\n      // Template info\n      templateId:   meta.templateId,\n      templateName: meta.templateName,\n\n      // Content metadata\n      day:         meta.day,\n      topic:       meta.topic,\n      pillar:      meta.pillar,\n      hook:        meta.hook,\n      caption:     meta.caption,\n      hashtags:    meta.hashtags,\n      cta:         meta.cta,\n      visualBrief: meta.visualBrief,\n\n      // File info\n      folderName: meta.folderName,\n      format:     meta.format,\n\n      // All slides grouped with their own renderUrl\n      slides,\n\n      // Flat arrays for quick access\n      allRenderUrls:   slides.map(s => s.renderUrl).filter(Boolean).join(', '),\n      allDriveUrls:    slides.map(s => s.driveUrl).filter(Boolean).join(', '),\n      allDriveFileIds: slides.map(s => s.driveFileId).filter(Boolean).join(', '),\n\n      success: true\n    }\n  });\n}\n\nconsole.log(`✅ Grouped ${aggregatedData.length} items into ${results.length} post(s)`);\nreturn results;"
+      },
+      "id": "0911f289-da56-401a-9c67-f89d99ff1d4c",
+      "name": "Track Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1216,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $('Track Result').all().map(i => i.json);\nconst total   = results.length;\nconst done    = results.filter(r => r.success).length;\n\nconst imgs    = results.filter(r => r.contentType === 'single_image');\nconst cars    = results.filter(r => r.contentType === 'carousel');\nconst reels   = results.filter(r => r.contentType === 'reel');\nconst stories = results.filter(r => r.contentType === 'story');\nconst rate    = total > 0 ? Math.round(done / total * 100) : 0;\n\n// ── Build byPost from actual fields in Track Result output ──\nconst byPost = {};\nresults.forEach(r => {\n  if (!byPost[r.postId]) {\n    byPost[r.postId] = {\n      contentType: r.contentType,\n      totalSlides: r.totalSlides || 1,\n      renderUrls:  [],\n      urls:        [],\n      slides:      []\n    };\n  }\n\n  // ── allRenderUrls is a comma-separated string → split into array ──\n  if (r.allRenderUrls) {\n    r.allRenderUrls.split(', ').forEach(url => {\n      if (url) byPost[r.postId].renderUrls.push(url);\n    });\n  }\n\n  // ── allDriveUrls is a comma-separated string → split into array ──\n  if (r.allDriveUrls) {\n    r.allDriveUrls.split(', ').forEach(url => {\n      if (url) byPost[r.postId].urls.push(url);\n    });\n  }\n\n  // ── slides[] exists directly on each result ──\n  if (Array.isArray(r.slides)) {\n    r.slides.forEach(s => {\n      byPost[r.postId].slides.push({\n        num:       s.slideNum,\n        renderUrl: s.renderUrl || '',\n        url:       s.driveUrl  || '',\n        fileName:  s.fileName  || ''\n      });\n    });\n  }\n});\n\nreturn [{\n  json: {\n    results,\n    byPost,\n    stats: {\n      total,\n      done,\n      failed:         total - done,\n      rate,\n      images:         imgs.length,\n      carouselSlides: cars.length,\n      reels:          reels.length,\n      stories:        stories.length\n    }\n  }\n}];"
+      },
+      "id": "0393a6d9-6781-425c-918e-b240546abacc",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data    = $('Collect Results').first().json;\nconst results = data.results || [];\nconst cal     = $('Read Calendar').all().map(i => i.json);\n\n// ── Start with a copy of all calendar rows unchanged ──\nconst calMap = {};\ncal.forEach(row => {\n  calMap[row.PostID] = { ...row };\n});\n\n// ── Loop results and stamp URLs only into the EXACT matching postId ──\nfor (const r of results) {\n  const postId      = r.postId;\n  const contentType = (r.contentType || '').toLowerCase().trim();\n\n  // ── Only update if postId exists in calendar ──\n  if (!calMap[postId]) continue;\n\n  let mainRender = '';\n  let slideUrls  = '';\n\n  if (contentType === 'carousel') {\n    const sorted = (r.slides || [])\n      .sort((a, b) => a.slideNum - b.slideNum)\n      .map(s => s.renderUrl)\n      .filter(Boolean);\n    mainRender = sorted.join(', ');\n    slideUrls  = mainRender;\n\n  } else if (contentType === 'reel') {\n    mainRender = r.allRenderUrls || '';\n\n  } else if (contentType === 'single_image') {\n    mainRender = (r.allRenderUrls || '').split(', ')[0] || '';\n\n  } else if (contentType === 'story') {\n    mainRender = (r.allRenderUrls || '').split(', ')[0] || '';\n  }\n\n  // ── Only stamp if we have a real URL ──\n  if (mainRender) {\n    calMap[postId].Visual_URL     = mainRender;\n    calMap[postId].Render_URL     = mainRender;\n    calMap[postId].Slide_URLs     = slideUrls;\n    calMap[postId].Visual_Created = true;\n    calMap[postId].Status         = 'visuals_created';\n  }\n}\n\n// ── Return all calendar rows — updated ones have URLs, rest unchanged ──\nreturn Object.values(calMap).map(row => ({ json: row }));"
+      },
+      "id": "852539e4-5a0c-4fbf-b992-31b8a8899782",
+      "name": "Prepare Calendar Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "={{ $json.Status }}",
+            "NeedsReview": "={{ $json.NeedsReview }}",
+            "Visual_URL": "={{ $json.Visual_URL }}",
+            "Visual_Created": "={{ $json.Visual_Created }}",
+            "PostID": "={{ $json.PostID }}",
+            "row_number": 0,
+            "Slide_URLs": "={{ $json.Slide_URLs }}"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ContentType",
+              "displayName": "ContentType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Pillar",
+              "displayName": "Pillar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Preferred Template",
+              "displayName": "Preferred Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Media Urls",
+              "displayName": "Media Urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ScheduledDate",
+              "displayName": "ScheduledDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ScheduledTime",
+              "displayName": "ScheduledTime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Day",
+              "displayName": "Day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Product Featured",
+              "displayName": "Product Featured",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "VisualBrief",
+              "displayName": "VisualBrief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "StoryType",
+              "displayName": "StoryType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "MainText",
+              "displayName": "MainText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SupportText",
+              "displayName": "SupportText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Background",
+              "displayName": "Background",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "InteractiveElement",
+              "displayName": "InteractiveElement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "FeedPostConnection",
+              "displayName": "FeedPostConnection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NeedsReview",
+              "displayName": "NeedsReview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ReviewFlags",
+              "displayName": "ReviewFlags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "AISource",
+              "displayName": "AISource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CreatedAt",
+              "displayName": "CreatedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Visual_URL",
+              "displayName": "Visual_URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Visual_Created",
+              "displayName": "Visual_Created",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Slide_URLs",
+              "displayName": "Slide_URLs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Already_Published",
+              "displayName": "Already_Published",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Published_At",
+              "displayName": "Published_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Instagram_Post_ID",
+              "displayName": "Instagram_Post_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "852e9282-b772-4782-bf33-39e8b32138d8",
+      "name": "Update Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -416,
+        -368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d=$('Collect Results').first().json.stats;\nconst lvl=d.rate>=95?'Full Success':d.rate>=80?'Partial (manual work needed)':'Significant Issues';\nconst msg='🎨 *Visual Creation Complete (Placid)!*\\n\\n✅ Summary:\\n  📸 Single Images: '+d.images+'\\n  🎠 Carousel Slides: '+d.carouselSlides+' total\\n  🎬 Reels: '+d.reels+'\\n  📱 Stories: '+d.stories+'\\n\\nTotal: '+d.done+'/'+d.total+' files ('+d.rate+'%)\\nStatus: '+lvl+'\\n'+(d.failed>0?'\\n⚠️ Failed: '+d.failed+' files - check Visual Log':'')+'\\n\\n📁 All files generated via Placid\\n📋 Calendar updated with URLs\\n\\nNext: First post Monday 11:00 AM';\nreturn[{json:{message:msg,stats:d,date:new Date().toISOString().split('T')[0],timestamp:new Date().toISOString()}}];"
+      },
+      "id": "32daa803-d9bd-479e-b773-e6147ea3a0fd",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "lordshivavishnu357@gmail.com",
+        "subject": "=Visual Creation Report - {{ $json.date }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {}
+      },
+      "id": "93cbc966-e500-45a9-9ede-3454e4aad059",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        -368
+      ],
+      "webhookId": "6c6761d1-0899-4e37-86db-280f86c29645",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "AjMFrsPA8MHAunjU",
+          "name": "Gmail account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1529560364,
+          "mode": "list",
+          "cachedResultName": "Sheet5",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=1529560364"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "cb0162f6-a82c-4510-9edc-4cb9a0e9c413",
+      "name": "Update Visual Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        256,
+        -368
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "HzuWfYLFgtkv2jUv",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "72fe6e9d-c6e1-4c66-9905-34d01f45967d",
+      "name": "Done",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "template",
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-placid.placid",
+      "typeVersion": 1,
+      "position": [
+        -2528,
+        -16
+      ],
+      "id": "649548c3-6f0f-4eb3-9485-cab56ec25206",
+      "name": "Get many templates",
+      "executeOnce": true,
+      "credentials": {
+        "placidApi": {
+          "id": "Amt8FHm0CG8hpNdq",
+          "name": "Placid account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  EXTRACT TEMPLATE CONFIGURATION — Universal v3\n//  Works for: carousel, reel, single_image, story\n//  Input: Loop Over Items\n//  Output: Stringified template config for AI prompt\n// ============================================================\n\nconst item = $input.first().json;\n\n// ── Extract core info ──\nconst contentType  = item.contentType || '';\nconst slideNum     = item.slideNum    || 1;\nconst sceneNum     = item.sceneNum    || 1;\nconst totalSlides  = item.totalSlides || item.totalScenes || 1;\nconst templateId   = item.templateId  || '';\nconst templateName = item.templateName || '';\n\n// ── UNIVERSAL: Extract layers from wherever they exist ──\nlet templateLayers = [];\n\n// Priority 1: Check currentTemplate (new per-slide structure)\nif (item.currentTemplate && item.currentTemplate.layers) {\n  templateLayers = item.currentTemplate.layers;\n  console.log(`Using currentTemplate.layers (${templateLayers.length} layers)`);\n}\n// Priority 2: Check templates array (multi-template fallback)\nelse if (item.templates && Array.isArray(item.templates) && item.templates.length > 0) {\n  const currentIndex = (slideNum || sceneNum || 1) - 1;\n  const currentTemplate = item.templates[currentIndex] || item.templates[0];\n  templateLayers = currentTemplate.layers || [];\n  console.log(`Using templates[${currentIndex}].layers (${templateLayers.length} layers)`);\n}\n// Priority 3: Check single template object (legacy carousel structure)\nelse if (item.template && item.template.layers) {\n  templateLayers = item.template.layers;\n  console.log(`Using template.layers (${templateLayers.length} layers)`);\n}\n// Priority 4: Check matchedTemplate (from single_image, story)\nelse if (item.matchedTemplate && item.matchedTemplate.layers) {\n  templateLayers = item.matchedTemplate.layers;\n  console.log(`Using matchedTemplate.layers (${templateLayers.length} layers)`);\n}\n// Priority 5: No template found\nelse {\n  console.log('⚠️ No template layers found in item');\n}\n\n// ── Filter layers by type ──\nconst textLayers    = templateLayers.filter(l => l.type === 'text');\nconst pictureLayers = templateLayers.filter(l => l.type === 'picture');\n\n// ── Determine context based on content type ──\nconst contextInfo = contentType === 'carousel'\n  ? { currentPage: slideNum, totalPages: totalSlides, pageType: 'slide' }\n  : contentType === 'reel'\n  ? { currentScene: sceneNum, totalScenes: totalSlides, pageType: 'scene' }\n  : contentType === 'story'\n  ? { storyType: item.storyType || 'Image', pageType: 'story' }\n  : { pageType: 'single' };\n\n// ── Extract content to fill (universal for all types) ──\nconst content = {\n  topic:       item.topic       || '',\n  hook:        item.hook        || '',\n  caption:     item.caption     || '',\n  cta:         item.cta         || '',\n  visualBrief: item.visualBrief || ''\n};\n\n// Add content type-specific fields\nif (contentType === 'reel') {\n  content.duration = item.duration || 'use_template_default';\n}\n\nif (contentType === 'story') {\n  content.storyType          = item.storyType          || 'Image';\n  content.mainText           = item.mainText           || '';\n  content.supportText        = item.supportText        || '';\n  content.background         = item.background         || '';\n  content.interactiveElement = item.interactiveElement || {};\n}\n\n// Handle media URLs\nif (item.mediaUrls) {\n  if (item.mediaUrls.useDefaultMedia) {\n    content.mediaUrl = 'no file is provided';\n  } else {\n    content.mediaUrl = item.mediaUrls.media_url_1 || 'no file is provided';\n  }\n} else {\n  content.mediaUrl = 'no file is provided';\n}\n\n// ── Build clean template config object ──\nconst templateConfig = {\n  // Context info (varies by content type)\n  ...contextInfo,\n\n  // Template identification\n  templateId:   templateId,\n  templateName: templateName,\n  contentType:  contentType,\n\n  // Layer summary\n  totalLayers:        templateLayers.length,\n  totalTextLayers:    textLayers.length,\n  totalPictureLayers: pictureLayers.length,\n\n  // Full layer list with types\n  layers: templateLayers.map(l => ({\n    name: l.name,\n    type: l.type\n  })),\n\n  // Separated by type for easy AI reference\n  textLayerNames:    textLayers.map(l => l.name),\n  pictureLayerNames: pictureLayers.map(l => l.name),\n\n  // Content to fill into layers\n  content: content\n};\n\nconsole.log('Template config built:');\nconsole.log(`  Content Type: ${contentType}`);\nconsole.log(`  Template: ${templateName} (${templateId})`);\nconsole.log(`  Total Layers: ${templateLayers.length} (${textLayers.length} text, ${pictureLayers.length} picture)`);\n\nreturn [\n  {\n    json: {\n      stringified: JSON.stringify(templateConfig, null, 2)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -992,
+        -80
+      ],
+      "id": "050e4ceb-6dc6-44df-b0bf-7750a04fd52b",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=**NOW PROCESS:**\n\nLANGUAGE: {{ $node['Get row(s) in sheet1'].json['Content Language'] }}\nTEMPLATE UUID: {{ $('Process Items').item.json.templateId }}\nCONTENT: {{ $('Code in JavaScript3').item.json.stringified }}\nTEMPLATE CONFIGURATION: {{ $json.stringified }}\n\n**Analyze the Placid template layers, match character limits, and return ONLY the valid JSON body with no explanations:**"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "=\n\nYou are an expert social media content specialist and template engineer. Your task is to analyze a Placid template's layer configuration and generate a perfectly formatted Placid API request body.\n\n**YOUR TASK:**\n1. Analyze the Placid template layers to understand layer names and types\n2. Map content to layers intelligently respecting character limits\n3. Return a valid Placid API JSON body — NO markdown, NO explanation, PURE JSON only\n\n**INPUT YOU WILL RECEIVE:**\n- LANGUAGE: Language for all text content\n- TEMPLATE UUID: The Placid template UUID\n- CONTENT: {topic, hook, caption, cta, visualBrief, mediaUrl}\n- TEMPLATE CONFIGURATION: JSON array from Placid GET /templates/{uuid} response\n\n**STEP 1: ANALYZE PLACID LAYERS**\n\nEach object in the \"layers\" array has:\n- \"type\": \"text\" or \"picture\"\n- \"text\" (text layers): default text — count characters to determine your limit\n- \"image\" (picture layers): default image URL — keep if no new image is provided\n- \"name\": exact identifier — BUT some layer names contain a character hint in this format: \"Layer Name(Chars:N)\"\n\nIf a layer name contains \"(Chars:N)\":\n→ Extract N as the HARD MAXIMUM character limit for that layer\n→ Your text MUST be minimum (N-10) characters AND maximum N characters\n→ This is NON-NEGOTIABLE — count every character before finalizing\n→ If your draft is too short → expand it\n→ If your draft is too long → trim it\n→ Do NOT submit until character count is verified within range\n→ Example: \"Main Heading(Chars:53)\" → text must be 43–53 chars, never 42, never 54\n→ Example: \"small text(Chars:18)\" → text must be 8–18 chars, never 7, never 19\n→ KEEP the full layer name exactly as received — including \"(Chars:N)\" — use the complete name as the layer key in your JSON output\n→ Example: key must be `\"Main Heading(Chars:53)\"` not `\"Main Heading\"`\n\n**STEP 2: CONTENT MAPPING**\n\nText layers:\n- heading / title / main / hook → TOPIC (short, punchy)\n- subheading / subtitle / tagline → HOOK or short CAPTION excerpt\n- description / body / content → CAPTION\n- cta / button / action → CTA\n- Other text layers → use most contextually fitting content field\n\nCharacter limits (layers WITHOUT Chars hint):\n- Count chars in template's \"text\" default value for each layer\n- Your text must NOT exceed that count by more than 10%\n- If template uses line breaks → use \\n for multi-line\n\nPicture layers:\n- Check the `mediaUrl` field in CONTENT\n- If `mediaUrl` starts with \"http://\" or \"https://\" → include the picture layer with that URL as the \"image\" value\n- If `mediaUrl` is \"no file is provided\", empty, null, or missing → **SKIP the picture layer entirely — do NOT include it in the output JSON at all**\n- **NEVER invent, guess, or use placeholder image URLs under any circumstance**\n\n**STEP 3: LANGUAGE**\n\nWrite ALL text in the specified LANGUAGE with native-speaker quality and brand tone: professional, clear, engaging.\n\n**STEP 4: OUTPUT FORMAT**\n\nIf `mediaUrl` is a real URL:\n```\n{\n  \"template_uuid\": \"THE_UUID_FROM_INPUT\",\n  \"preview\": true,\n  \"layers\": {\n    \"exact_text_layer_name\": {\n      \"text\": \"Your content here\"\n    },\n    \"exact_picture_layer_name\": {\n      \"image\": \"https://actual-mediaUrl-from-input.com/photo.jpg\"\n    }\n  }\n}\n```\n\nIf `mediaUrl` is NOT provided:\n```\n{\n  \"template_uuid\": \"THE_UUID_FROM_INPUT\",\n  \"preview\": true,\n  \"layers\": {\n    \"exact_text_layer_name\": {\n      \"text\": \"Your content here\"\n    }\n  }\n}\n```\n\n**ABSOLUTE RULES:**\n- Use layer names EXACTLY as received in input — including any \"(Chars:N)\" suffix — never modify, strip, or shorten the layer name\n- Text layers: use ONLY the \"text\" field\n- Picture layers: use ONLY the \"image\" field\n- **NEVER invent or use placeholder image URLs — if `mediaUrl` is not a real URL, omit ALL picture layers completely**\n- SKIP any text layer whose name is or resembles \"Vector Shape\", \"Shape\", \"Vector\", \"Divider\", \"Line\", \"Decorator\", or any other purely decorative/geometric element — do NOT include these in the output JSON at all\n- **CHARACTER LIMIT IS STRICTLY ENFORCED: If a layer name contains \"(Chars:N)\", you MUST count the exact characters of your text before outputting. The text length MUST be between (N-10) and N characters inclusive. A single character above N or below (N-10) is a VIOLATION. Rewrite the text as many times as needed until it fits. Never guess — always count.**\n- Do NOT include: format, duration, fps, color, font, width, height, or any positioning fields\n- Do NOT add layers not present in the template\n- Do NOT wrap in markdown code blocks (no ```)\n- Return PURE JSON only — nothing before or after the JSON object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -768,
+        -80
+      ],
+      "id": "98621927-b898-4f94-bda8-6718b6b301d9",
+      "name": "Message a model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "De92yjgDFXJyu7JL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  EXTRACT RENDER URLS + METADATA\n//  Pulls rendered URLs from Placid + metadata from Process Items loop\n// ============================================================\n\nconst allInputs = $input.all();\n\n// ── Pull metadata from the Process Items loop node ──\nconst loopData = $('Process Items').item.json;\n\nconst pageUrls = [];\n\nfor (const inp of allInputs) {\n  const data = inp.json;\n  let renderUrl = '';\n\n  // ── Placid image response ──\n  if (data.image_url) {\n    renderUrl = data.image_url;\n  }\n  // ── Placid video response (after polling) ──\n  else if (data.video_url) {\n    renderUrl = data.video_url;\n  }\n  // ── Placid video queued (polling_url available) ──\n  else if (data.status === 'queued' && data.polling_url) {\n    renderUrl = data.polling_url;\n  }\n  // ── Legacy / fallback ──\n  else if (data.render_url) {\n    renderUrl = data.render_url;\n  } else if (data.url) {\n    renderUrl = data.url;\n  } else if (data.result && data.result.url) {\n    renderUrl = data.result.url;\n  }\n\n  if (renderUrl) {\n    pageUrls.push({\n      // ── Render info ──\n      page:      data.page || ('page-' + (pageUrls.length + 1)),\n      renderUrl: renderUrl,\n      status:    data.status || 'unknown',\n\n      // ── Post identification ──\n      postId:      loopData.postId      || '',\n      contentType: loopData.contentType || '',\n      slideNum:    loopData.slideNum    || 1,\n      totalSlides: loopData.totalSlides || 1,\n\n      // ── Template info ──\n      templateId:   loopData.templateId   || '',\n      templateName: loopData.templateName || '',\n\n      // ── Content metadata ──\n      day:         loopData.day         || '',\n      topic:       loopData.topic       || '',\n      pillar:      loopData.pillar      || '',\n      hook:        loopData.hook        || '',\n      caption:     loopData.caption     || '',\n      hashtags:    loopData.hashtags    || '',\n      cta:         loopData.cta         || '',\n      visualBrief: loopData.visualBrief || '',\n\n      // ── File info ──\n      fileName:   loopData.fileName   || '',\n      format:     loopData.format     || '',\n      folderName: loopData.folderName || '',\n\n      // ── Layer mapping used ──\n      layers: loopData.layers || {}\n    });\n  }\n}\n\nreturn pageUrls.map((item, index) => ({\n  json: item,\n  pairedItem: { item: index }\n}));"
+      },
+      "id": "ac75de7c-f2a7-43bc-a79e-00362a777c10",
+      "name": "Extract Render URL1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  EXTRACT RENDER URLS + METADATA\n//  Pulls rendered URLs from Placid + metadata from Process Items loop\n// ============================================================\n\nconst allInputs = $input.all();\n\n// ── Pull metadata from the Process Items loop node ──\nconst loopData = $('Process Items').item.json;\n\nconst pageUrls = [];\n\nfor (const inp of allInputs) {\n  const data = inp.json;\n  let renderUrl = '';\n\n  // ── Placid image response ──\n  if (data.image_url) {\n    renderUrl = data.image_url;\n  }\n  // ── Placid video response (after polling) ──\n  else if (data.video_url) {\n    renderUrl = data.video_url;\n  }\n  // ── Placid video queued (polling_url available) ──\n  else if (data.status === 'queued' && data.polling_url) {\n    renderUrl = data.polling_url;\n  }\n  // ── Legacy / fallback ──\n  else if (data.render_url) {\n    renderUrl = data.render_url;\n  } else if (data.url) {\n    renderUrl = data.url;\n  } else if (data.result && data.result.url) {\n    renderUrl = data.result.url;\n  }\n\n  if (renderUrl) {\n    pageUrls.push({\n      // ── Render info ──\n      page:      data.page || ('page-' + (pageUrls.length + 1)),\n      renderUrl: renderUrl,\n      status:    data.status || 'unknown',\n\n      // ── Post identification ──\n      postId:      loopData.postId      || '',\n      contentType: loopData.contentType || '',\n      slideNum:    loopData.slideNum    || 1,\n      totalSlides: loopData.totalSlides || 1,\n\n      // ── Template info ──\n      templateId:   loopData.templateId   || '',\n      templateName: loopData.templateName || '',\n\n      // ── Content metadata ──\n      day:         loopData.day         || '',\n      topic:       loopData.topic       || '',\n      pillar:      loopData.pillar      || '',\n      hook:        loopData.hook        || '',\n      caption:     loopData.caption     || '',\n      hashtags:    loopData.hashtags    || '',\n      cta:         loopData.cta         || '',\n      visualBrief: loopData.visualBrief || '',\n\n      // ── File info ──\n      fileName:   loopData.fileName   || '',\n      format:     loopData.format     || '',\n      folderName: loopData.folderName || '',\n\n      // ── Layer mapping used ──\n      layers: loopData.layers || {}\n    });\n  }\n}\n\nreturn pageUrls.map((item, index) => ({\n  json: item,\n  pairedItem: { item: index }\n}));"
+      },
+      "id": "85f30fc0-13db-4fdf-9126-0c080e97ed91",
+      "name": "Extract Render URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -368
+      ],
+      "id": "56e0120c-a4ae-41fb-a8ae-4a75f173a85b",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5865808f-35ce-4427-8b4e-d31ab4898129",
+              "leftValue": "={{ $json.contentType }}",
+              "rightValue": "carousel",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c2a6230e-f197-450a-93c8-523a520fb399",
+              "leftValue": "={{ $json.contentType }}",
+              "rightValue": "reel",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -2144,
+        -16
+      ],
+      "id": "b6389789-71f6-407e-86b3-47088003748f",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9a5126cf-66ef-46ff-b6b1-92ce6e75e5f3",
+              "leftValue": "={{ $json.postId }}",
+              "rightValue": "CAR-20260310-001",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "635f4bbd-8d7e-4d7e-952a-02eb693eff85",
+              "leftValue": "={{ $json.postId }}",
+              "rightValue": "REL-20260311-001",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -1936,
+        -16
+      ],
+      "id": "328b1be3-f059-4981-afd3-f4a9067a5658",
+      "name": "Filter1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  FORMAT TELEGRAM APPROVAL MESSAGE\n//  Sends all content with rendered visual URLs + 4 action buttons\n// ============================================================\n\nconst cfg = $('Get row(s) in sheet1').first().json;\nconst collectData = $('Collect Results').first().json;\nconst results = collectData.results || [];\nconst stats = collectData.stats || {};\n\nconst telegramToken = cfg.telegramBotToken || '';\nconst chatId = cfg.telegramChatId || '';\n\nif (!telegramToken || !chatId || telegramToken === 'YOUR_BOT_TOKEN') {\n  return [{ json: { skip: true, reason: 'Telegram not configured' } }];\n}\n\n// Build batch ID for this week\nconst now = new Date();\nconst batchId = 'BATCH_' + now.toISOString().split('T')[0];\n\n// Separate feed posts and stories\nconst feedPosts = results.filter(r => \n  r.contentType === 'single_image' || r.contentType === 'carousel' || r.contentType === 'reel'\n);\nconst stories = results.filter(r => r.contentType === 'story');\n\n// Build feed posts message\nlet feedMsg = `🎨 *VISUALS READY FOR REVIEW*\\n`;\nfeedMsg += `Week Batch: \\`${batchId}\\`\\n\\n`;\nfeedMsg += `━━━ FEED POSTS (${feedPosts.length}) ━━━\\n\\n`;\n\nlet postIndex = 1;\nfor (const r of feedPosts) {\n  const typeEmoji = r.contentType === 'carousel' ? '🎠' : \n                    r.contentType === 'reel' ? '🎬' : '📸';\n  const typeLabel = r.contentType.toUpperCase().replace('_', ' ');\n  \n  feedMsg += `${postIndex}️⃣ ${r.day || ''} — ${typeLabel} ${typeEmoji}\\n`;\n  feedMsg += `📌 ID: \\`${r.postId}\\`\\n`;\n  feedMsg += `📝 Topic: ${r.topic || 'N/A'}\\n`;\n  feedMsg += `🎣 Hook: ${(r.hook || '').substring(0, 50)}${(r.hook || '').length > 50 ? '...' : ''}\\n`;\n  feedMsg += `📊 Caption: ${(r.caption || '').split(/\\s+/).length} words\\n`;\n  \n  if (r.contentType === 'carousel' && r.allRenderUrls) {\n    const slides = r.allRenderUrls.split(', ');\n    feedMsg += `🖼️ ${slides.length} slides rendered\\n`;\n  } else if (r.allRenderUrls) {\n    feedMsg += `🖼️ Visual: Ready ✅\\n`;\n  }\n  \n  feedMsg += `🏷️ Pillar: ${r.pillar || 'N/A'}\\n\\n`;\n  postIndex++;\n}\n\n// Story summary (compact)\nif (stories.length > 0) {\n  feedMsg += `━━━ STORIES (${stories.length}) ━━━\\n`;\n  feedMsg += `📱 ${stories.length} stories rendered and ready\\n\\n`;\n}\n\n// Stats\nfeedMsg += `━━━ SUMMARY ━━━\\n`;\nfeedMsg += `✅ Total: ${stats.done || 0}/${stats.total || 0} files (${stats.rate || 0}%)\\n`;\nfeedMsg += `📸 Images: ${stats.images || 0} | 🎠 Carousels: ${stats.carouselSlides || 0} slides\\n`;\nfeedMsg += `🎬 Reels: ${stats.reels || 0} | 📱 Stories: ${stats.stories || 0}\\n\\n`;\nfeedMsg += `💬 To make changes, click a button below.\\n`;\nfeedMsg += `Reference the *Post ID* when sending changes.`;\n\n// Build inline keyboard with 4 buttons\nconst keyboard = {\n  inline_keyboard: [\n    [\n      { text: '✅ Approve & Schedule', callback_data: `approve_all|${batchId}` },\n      { text: '🖼️ Change Image', callback_data: `change_image|${batchId}` }\n    ],\n    [\n      { text: '✏️ Change Text', callback_data: `change_text|${batchId}` },\n      { text: '🔄 Regenerate', callback_data: `regenerate|${batchId}` }\n    ]\n  ]\n};\n\n// Split message if too long (Telegram 4096 char limit)\nconst messages = [];\nif (feedMsg.length > 4000) {\n  // Split into feed posts and stats\n  const splitPoint = feedMsg.lastIndexOf('━━━ STORIES', 3900);\n  if (splitPoint > 0) {\n    messages.push({ text: feedMsg.substring(0, splitPoint).trim(), keyboard: null });\n    messages.push({ text: feedMsg.substring(splitPoint).trim(), keyboard: keyboard });\n  } else {\n    messages.push({ text: feedMsg.substring(0, 4000) + '...', keyboard: null });\n    messages.push({ text: '...' + feedMsg.substring(4000), keyboard: keyboard });\n  }\n} else {\n  messages.push({ text: feedMsg, keyboard: keyboard });\n}\n\nreturn [{\n  json: {\n    telegramToken,\n    chatId,\n    messages,\n    batchId,\n    skip: false\n  }\n}];"
+      },
+      "id": "tg-003-format-approval",
+      "name": "Format Telegram Approval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Send Telegram message(s) with inline keyboard buttons\nconst data = $input.first().json;\n\nif (data.skip) {\n  return [{ json: { sent: false, reason: data.reason } }];\n}\n\nconst token = data.telegramToken;\nconst chatId = data.chatId;\nconst messages = data.messages || [];\n\nconst results = [];\n\nfor (let i = 0; i < messages.length; i++) {\n  const msg = messages[i];\n  \n  const body = {\n    chat_id: chatId,\n    text: msg.text,\n    parse_mode: 'Markdown'\n  };\n  \n  // Add inline keyboard to the last message\n  if (msg.keyboard) {\n    body.reply_markup = msg.keyboard;\n  }\n  \n  try {\n    const response = await $helpers.httpRequest({\n      method: 'POST',\n      url: `https://api.telegram.org/bot${token}/sendMessage`,\n      body: body,\n      headers: { 'Content-Type': 'application/json' },\n      returnFullResponse: true\n    });\n    \n    results.push({\n      messageIndex: i,\n      sent: true,\n      messageId: response.body?.result?.message_id || null\n    });\n    \n    // Small delay between messages\n    if (i < messages.length - 1) {\n      await new Promise(resolve => setTimeout(resolve, 500));\n    }\n  } catch (error) {\n    results.push({\n      messageIndex: i,\n      sent: false,\n      error: error.message\n    });\n  }\n}\n\nreturn [{ json: { sent: true, results, batchId: data.batchId } }];"
+      },
+      "id": "tg-004-send-approval",
+      "name": "Send Telegram Approval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -368
+      ]
+    }
+  ],
+  "pinData": {
+    "Aggregate": [
+      {
+        "json": {
+          "data": [
+            {
+              "page": "page-1",
+              "renderUrl": "https://placid-fra.fra1.digitaloceanspaces.com/production/rest-images/2cpcfsn7ciexb/rest-3bc1615bf0df98f05cdac58fc279da38-te9zlbge.jpg",
+              "status": "finished",
+              "postId": "CAR-20260310-001",
+              "contentType": "carousel",
+              "slideNum": 1,
+              "totalSlides": 5,
+              "templateId": "2cpcfsn7ciexb",
+              "templateName": "Corousel 45",
+              "day": "Tuesday",
+              "topic": "Deep Tissue Massage",
+              "pillar": "Education",
+              "hook": "How much do you really know about deep tissue massage?",
+              "caption": "Discover our therapeutic massage service focusing on deeper layers of muscle and connective tissue. It provides pain relief, improved mobility, and reduced muscle tension. Ideal for athletes and office workers. Prices start from €90. #deeptissuemassage #painrelief #mobility",
+              "hashtags": "#deeptissuemassage #painrelief #mobility #musclecare #wellness #health #bodycare #relaxation #selfcare #wellbeing",
+              "cta": "Book your session now",
+              "visualBrief": "Step by step process images",
+              "fileName": "CAR-20260310-001_slide_01.jpg",
+              "format": "jpg",
+              "folderName": "Carousels_Week_2026-03-09",
+              "layers": {
+                "slide_title": {
+                  "text": "How much do you really know about deep tissue massage?"
+                },
+                "slide_body": {
+                  "text": ""
+                },
+                "slide_number": {
+                  "text": "1 of 1"
+                }
+              }
+            },
+            {
+              "page": "page-1",
+              "renderUrl": "https://placid-fra.fra1.digitaloceanspaces.com/production/rest-images/qtjlmowspm2ri/rest-b80b2cf758eba2a33c1e08bd09183e6d-ebcfeef7.jpg",
+              "status": "finished",
+              "postId": "CAR-20260310-001",
+              "contentType": "carousel",
+              "slideNum": 2,
+              "totalSlides": 5,
+              "templateId": "qtjlmowspm2ri",
+              "templateName": "Corousel 45",
+              "day": "Tuesday",
+              "topic": "Deep Tissue Massage",
+              "pillar": "Education",
+              "hook": "How much do you really know about deep tissue massage?",
+              "caption": "Discover our therapeutic massage service focusing on deeper layers of muscle and connective tissue. It provides pain relief, improved mobility, and reduced muscle tension. Ideal for athletes and office workers. Prices start from €90. #deeptissuemassage #painrelief #mobility",
+              "hashtags": "#deeptissuemassage #painrelief #mobility #musclecare #wellness #health #bodycare #relaxation #selfcare #wellbeing",
+              "cta": "Book your session now",
+              "visualBrief": "Step by step process images",
+              "fileName": "CAR-20260310-001_slide_01.jpg",
+              "format": "jpg",
+              "folderName": "Carousels_Week_2026-03-09",
+              "layers": {
+                "slide_title": {
+                  "text": "How much do you really know about deep tissue massage?"
+                },
+                "slide_body": {
+                  "text": ""
+                },
+                "slide_number": {
+                  "text": "1 of 1"
+                }
+              }
+            },
+            {
+              "page": "page-1",
+              "renderUrl": "https://placid-fra.fra1.digitaloceanspaces.com/production/rest-images/drk5neyqip3yw/rest-a8fcaba640328f4e537212f77319eef2-myicu8tj.jpg",
+              "status": "finished",
+              "postId": "CAR-20260310-001",
+              "contentType": "carousel",
+              "slideNum": 3,
+              "totalSlides": 5,
+              "templateId": "drk5neyqip3yw",
+              "templateName": "Corousel 45",
+              "day": "Tuesday",
+              "topic": "Deep Tissue Massage",
+              "pillar": "Education",
+              "hook": "How much do you really know about deep tissue massage?",
+              "caption": "Discover our therapeutic massage service focusing on deeper layers of muscle and connective tissue. It provides pain relief, improved mobility, and reduced muscle tension. Ideal for athletes and office workers. Prices start from €90. #deeptissuemassage #painrelief #mobility",
+              "hashtags": "#deeptissuemassage #painrelief #mobility #musclecare #wellness #health #bodycare #relaxation #selfcare #wellbeing",
+              "cta": "Book your session now",
+              "visualBrief": "Step by step process images",
+              "fileName": "CAR-20260310-001_slide_01.jpg",
+              "format": "jpg",
+              "folderName": "Carousels_Week_2026-03-09",
+              "layers": {
+                "slide_title": {
+                  "text": "How much do you really know about deep tissue massage?"
+                },
+                "slide_body": {
+                  "text": ""
+                },
+                "slide_number": {
+                  "text": "1 of 1"
+                }
+              }
+            },
+            {
+              "page": "page-1",
+              "renderUrl": "https://placid-fra.fra1.digitaloceanspaces.com/production/rest-images/8lrsxcdnemjvw/rest-e90fa7ad94961a1481ae9b1eccf6201f-yhn1i0ox.jpg",
+              "status": "finished",
+              "postId": "CAR-20260310-001",
+              "contentType": "carousel",
+              "slideNum": 4,
+              "totalSlides": 5,
+              "templateId": "8lrsxcdnemjvw",
+              "templateName": "Corousel 45",
+              "day": "Tuesday",
+              "topic": "Deep Tissue Massage",
+              "pillar": "Education",
+              "hook": "How much do you really know about deep tissue massage?",
+              "caption": "Discover our therapeutic massage service focusing on deeper layers of muscle and connective tissue. It provides pain relief, improved mobility, and reduced muscle tension. Ideal for athletes and office workers. Prices start from €90. #deeptissuemassage #painrelief #mobility",
+              "hashtags": "#deeptissuemassage #painrelief #mobility #musclecare #wellness #health #bodycare #relaxation #selfcare #wellbeing",
+              "cta": "Book your session now",
+              "visualBrief": "Step by step process images",
+              "fileName": "CAR-20260310-001_slide_01.jpg",
+              "format": "jpg",
+              "folderName": "Carousels_Week_2026-03-09",
+              "layers": {
+                "slide_title": {
+                  "text": "How much do you really know about deep tissue massage?"
+                },
+                "slide_body": {
+                  "text": ""
+                },
+                "slide_number": {
+                  "text": "1 of 1"
+                }
+              }
+            },
+            {
+              "page": "page-1",
+              "renderUrl": "https://placid-fra.fra1.digitaloceanspaces.com/production/rest-images/haj5r4xjbdvnn/rest-92b09be20ee8ea2178ca6ff1ba86663f-hzdyrlv2.jpg",
+              "status": "finished",
+              "postId": "CAR-20260310-001",
+              "contentType": "carousel",
+              "slideNum": 5,
+              "totalSlides": 5,
+              "templateId": "haj5r4xjbdvnn",
+              "templateName": "Corousel 45",
+              "day": "Tuesday",
+              "topic": "Deep Tissue Massage",
+              "pillar": "Education",
+              "hook": "How much do you really know about deep tissue massage?",
+              "caption": "Discover our therapeutic massage service focusing on deeper layers of muscle and connective tissue. It provides pain relief, improved mobility, and reduced muscle tension. Ideal for athletes and office workers. Prices start from €90. #deeptissuemassage #painrelief #mobility",
+              "hashtags": "#deeptissuemassage #painrelief #mobility #musclecare #wellness #health #bodycare #relaxation #selfcare #wellbeing",
+              "cta": "Book your session now",
+              "visualBrief": "Step by step process images",
+              "fileName": "CAR-20260310-001_slide_01.jpg",
+              "format": "jpg",
+              "folderName": "Carousels_Week_2026-03-09",
+              "layers": {
+                "slide_title": {
+                  "text": "How much do you really know about deep tissue massage?"
+                },
+                "slide_body": {
+                  "text": ""
+                },
+                "slide_number": {
+                  "text": "1 of 1"
+                }
+              }
+            },
+            {
+              "page": "page-1",
+              "renderUrl": "https://api.placid.app/api/rest/videos/1368567",
+              "status": "queued",
+              "postId": "REL-20260311-001",
+              "contentType": "reel",
+              "slideNum": 1,
+              "totalSlides": 1,
+              "templateId": "waac9hfvhcake",
+              "templateName": "11022025",
+              "day": "Wednesday",
+              "topic": "Anti-Pollution Mask",
+              "pillar": "Inspiration",
+              "hook": "Did you know pollution is damaging your skin?",
+              "caption": "Our clay mask detoxifies your skin and protects it from environmental damage, leading to clearer pores and a brighter complexion. A must-have for city dwellers and skincare enthusiasts. Only €48. #antipollution #skincare #beautytips",
+              "hashtags": "#antipollution #skincare #beautytips #facemask #detox #citylife #beautyproduct #skincareroutine #clearskin #antiaging",
+              "cta": "Get yours today",
+              "visualBrief": "Before and after results",
+              "fileName": "REL-20260311-001_reel.mp4",
+              "format": "mp4",
+              "folderName": "Reels_Week_2026-03-09",
+              "layers": {
+                "scene1_text": {
+                  "text": "Did you know pollution is damaging your skin?"
+                },
+                "scene2_text": {
+                  "text": "Setup"
+                },
+                "scene3_text": {
+                  "text": "Value"
+                },
+                "scene4_text": {
+                  "text": "Get yours today"
+                }
+              }
+            }
+          ]
+        },
+        "pairedItem": [
+          {
+            "item": 0
+          },
+          {
+            "item": 1
+          },
+          {
+            "item": 2
+          },
+          {
+            "item": 3
+          },
+          {
+            "item": 4
+          },
+          {
+            "item": 5
+          }
+        ]
+      }
+    ]
+  },
+  "connections": {
+    "Expand Carousel Pages": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Content Type": {
+      "main": [
+        [
+          {
+            "node": "Placid Render Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Placid Render Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placid Render Video": {
+      "main": [
+        [
+          {
+            "node": "Placid Poll Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placid Poll Video Status": {
+      "main": [
+        [
+          {
+            "node": "Extract Render URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Placid Render Image": {
+      "main": [
+        [
+          {
+            "node": "Extract Render URL1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Sunday 8PM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Read Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar": {
+      "main": [
+        [
+          {
+            "node": "Prepare Visual Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Visual Requests": {
+      "main": [
+        [
+          {
+            "node": "Get many templates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Route by Content Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Track Result": {
+      "main": [
+        [
+          {
+            "node": "Collect Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Results": {
+      "main": [
+        [
+          {
+            "node": "Prepare Calendar Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Calendar Update": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar": {
+      "main": [
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Summary": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Update Visual Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Visual Log": {
+      "main": [
+        [
+          {
+            "node": "Format Telegram Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many templates": {
+      "main": [
+        [
+          {
+            "node": "Expand Carousel Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "Message a model2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Render URL1": {
+      "main": [
+        [
+          {
+            "node": "Process Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Render URL": {
+      "main": [
+        [
+          {
+            "node": "Process Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Track Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Filter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter1": {
+      "main": [
+        [
+          {
+            "node": "Process Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Telegram Approval": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Approval": {
+      "main": [
+        [
+          {
+            "node": "Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6a8a5a35-bfc4-4110-a66b-dc20ee71e060",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9301a0d2cb4f0d3ce4f42b58554435fa7b894db5f60eb53bd5117fd5b924b581"
+  },
+  "id": "nQmYqdu4352wbY6mn-dV1",
+  "tags": []
+}

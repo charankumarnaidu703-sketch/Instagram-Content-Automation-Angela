@@ -1,0 +1,97 @@
+This spreadsheet, **"Instagram Content Automation Data(For Angela),"** serves as a central hub for managing and automating Instagram content. It tracks everything from product details and automation settings to content scheduling, performance analytics, and review logs.
+
+Below is a detailed breakdown of each sheet's structure and the data it contains.
+
+-----
+
+### 1\. Logs
+
+  * **Purpose:** Monitors and records every run of the content automation engine.
+  * **Key Fields:** `Date`, `Status` (e.g., Success), `Feed Posts` (count), `Stories` (count), `Flagged` (items needing review), `Feed AI` / `Story AI` (models used), and `Timestamp`.
+  * **Data Sample:**
+
+| Date       | Status  | Feed Posts | Stories | Flagged | Feed AI | Story AI | Timestamp                |
+| :--------- | :------ | :--------- | :------ | :------ | :------ | :------- | :----------------------- |
+| 2026-03-03 | Success | 7          | 14      | 7       | openai  | openai   | 2026-03-03T10:46:17.368Z |
+
+-----
+
+### 2\. Config
+
+  * **Purpose:** Stores the core settings and strategy for the automation, including brand voice, target audience, and posting schedules.
+  * **Key Fields:** `brandName`, `tone`, `audience`, `contentPillars`, `Content Language`, `blacklistWords`, `min/maxCaptionWords`, `feedPostTime`, `morning/eveningStoryTime`, and `igAccessToken`.
+  * **Data Sample:**
+    | brandName | tone | audience | contentPillars | Language | Posting Hour |
+    | :--- | :--- | :--- | :--- | :--- | :--- |
+    | Beauty Media | Professional, supportive, expert | Beauty salon owners, spa administrators | Product Use Cases, Business Tips, Tutorials | German | 11:00 AM |
+
+-----
+
+### 3\. Product List
+
+  * **Purpose:** A catalog of services and products available to be featured in generated content.
+  * **Key Fields:** `ProductID`, `Name`, `Category`, `Description`, `KeyBenefits`, `ContentAngle`, `PreferredFormat`, `Price`, `Priority`, and `Status`.
+  * **Data Sample:**
+    | ProductID | Name | Category | Key Benefits | Price | Status |
+    | :--- | :--- | :--- | :--- | :--- | :--- |
+    | PROD-006 | Men's Haircut & Style | Service | Sharp look, professional appearance | From €40 | Active |
+    | PROD-008 | Deep Tissue Massage | Service | Pain relief, improved mobility | From €90 | Active |
+
+-----
+
+### 4\. Analytics Dashboard
+
+  * **Purpose:** Tracks the performance of published content and provides AI-generated recommendations for improvement.
+  * **Key Fields:** `Topic`, `ContentType`, `EngagementRate`, `Likes`, `Reach`, `Ai recommendation`, and `PostDate`.
+  * **Data Sample:**
+    | Topic | ContentType | Engagement | Reach | AI Recommendation |
+    | :--- | :--- | :--- | :--- | :--- |
+    | 5 Italian Coffee Rituals | carousel | 12.5% | 5200 | (N/A) |
+    | Deep Tissue Massage | carousel | 700% | (N/A) | Diversify content types, improve hooks... |
+
+-----
+
+### 5\. Story Remainders
+
+  * **Purpose:** Manages the schedule and specific content for Instagram Stories, including interactive elements like polls and quizzes.
+  * **Key Fields:** `ReminderDate`, `ReminderTime`, `PostTime`, `Day`, `StoryType`, `MainText`, `SupportText`, `InteractiveElement` (JSON format), and `Status`.
+  * **Data Sample:**
+    | ReminderDate | Day | StoryType | Main Text | Interactive Element |
+    | :--- | :--- | :--- | :--- | :--- |
+    | 2026-03-09 | Monday | Poll | Which service is most in-demand? | {"type":"poll", "options":\["Facial", "Massage"\]} |
+
+-----
+
+### 6\. Content Calender
+
+  * **Purpose:** The master schedule for all upcoming feed posts and stories, containing full captions, media links, and review status.
+  * **Key Fields:** `PostID`, `ContentType`, `Pillar`, `ScheduledDate`, `Topic`, `Hook`, `Caption`, `Hashtags`, `Status`, and `AISource`.
+  * **Data Sample:**
+    | PostID | ContentType | ScheduledDate | Topic | Status |
+    | :--- | :--- | :--- | :--- | :--- |
+    | IMG-20260309-001 | SINGLE IMAGE | 2026-03-09 | Men's Haircut & Style | pending |
+    | CAR-20260310-001 | CAROUSEL | 2026-03-10 | Deep Tissue Massage | published |
+
+-----
+
+### 7\. Flagged Content
+
+  * **Purpose:** A review queue for content that triggered specific quality flags (e.g., caption too short, blacklisted words) during generation.
+  * **Key Fields:** `PostID`, `ContentType`, `ScheduledDate`, `ReviewFlags` (the reason for flagging), and `AISource`.
+  * **Data Sample:**
+    | PostID | ContentType | Review Flags | AI Source |
+    | :--- | :--- | :--- | :--- |
+    | IMG-20260309-001 | single\_image | Caption: 28w | openai |
+    | REL-20260311-001 | reel | Caption: 33w; No scenes | openai |
+
+-----
+
+### 8\. Content Archieve
+
+  * **Purpose:** A historical record of past topics and hooks to ensure content variety and avoid repetition.
+  * **Key Fields:** `Topic`, `Hook`, `ContentType`, `Pillar`, `ScheduledDate`, and `Hashtags`.
+  * **Data Sample:**
+    | Topic | Hook | ContentType | Pillar | Date |
+    | :--- | :--- | :--- | :--- | :--- |
+    | 5 Italian Coffee Rituals | You've been drinking espresso wrong | carousel | Education | 2026-02-03 |
+
