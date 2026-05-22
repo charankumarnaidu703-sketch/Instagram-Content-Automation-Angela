@@ -120,15 +120,61 @@ Built for a real-world beauty & wellness brand (**Angela Italy**), this system t
 - Receives the weekly content batch preview via Telegram
 - Provides inline action buttons for each batch:
 
-| Action | Command | Description |
-|--------|---------|-------------|
+| Action | Command / Interaction | Description |
+|--------|----------------------|-------------|
 | ✅ Approve All | Callback button | Marks all `visuals_created` posts as `approved` |
 | 🖼️ Change Image | `IMAGE PostID URL` | Swaps the visual and re-renders via Placid |
 | ✏️ Change Text | `TEXT PostID new caption` / `HOOK PostID new hook` | AI-refines the text (GPT-4), re-renders the visual |
 | 🔄 Regenerate | `REGEN PostID` | Fully regenerates content + visuals for a post |
+| ✏️ Edit Plan | `Edit Plan` Callback Button | Triggers the **Content Plan Editor** workflow for surgical updates |
+| 📋 Layer Info | `Layer Info` Callback Button | Triggers the **Template Layer Info** workflow to get asset layer schemas |
 
 - After each change, sends the updated visual back with new approval buttons
 - Updates the Content Calendar with approval status, timestamps, and modified content
+
+---
+
+### 3a. ✏️ Content Plan Editor (Companion Bot)
+**`Content Plan Editor.json`**
+
+| Detail | Value |
+|--------|-------|
+| **Trigger** | Telegram Callback Query (`edit_plan`) or Text Message |
+| **AI Model** | Google Gemini 2.5 Flash (via Langchain Gemini node) |
+| **Output** | Verbatim updated Google Sheet row + inline text before/after diff |
+
+**What it does:**
+- Activated by clicking **✏️ Edit Plan** in the Telegram approval thread, or by directly sending the command `Change <PostID> <your changes>` to the bot.
+- Provides a conversational AI-driven editor that implements a **strict surgical editing policy**:
+  1. Ingests the current calendar row, brand configurations, and available products catalog.
+  2. Identifies *only* the specific fields requested for update (e.g., Topic, Hook, Caption, CTA, VisualBrief, Hashtags).
+  3. Rewrites the targeted fields using Gemini 2.5 Flash while keeping all other fields strictly frozen (no paraphrasing or unwanted edits).
+  4. Validates changes against brand guidelines (character constraints, language, forbidden words).
+- Generates a beautifully formatted **Before/After Edit Report** (`.txt` file).
+- Updates the Google Sheets row and sends the text report to the reviewer for instant confirmation.
+
+---
+
+### 3b. 📋 Template Layer Info (Companion Bot)
+**`Template Layer Info.json`**
+
+| Detail | Value |
+|--------|-------|
+| **Trigger** | Telegram Callback Query (`layer_info|<PostID>`), `ALL` or `TEMPLATEINFO <PostID>` |
+| **API** | Placid.app API (Template Metadata Retrieval) |
+| **Output** | Dynamic, styled HTML Layer Specification Document |
+
+**What it does:**
+- Helps reviewers understand exactly which text and image layers are editable on a graphic template before requesting changes.
+- Fetching:
+  - On `TEMPLATEINFO <PostID>`, queries Placid.app for that post's assigned template layer schema.
+  - On `ALL`, lists all layers and image URLs for all current calendar posts.
+- Intelligently filters out static graphic/vector layers (`vector shape`, `shape`, `divider`, `decorator`, etc.) to only display developer-friendly, editable text/picture elements.
+- Beautifully handles complex schemas:
+  - **Carousels**: Lists slides sequentially (`page-1`, `page-2`...) matching their respective templates.
+  - **Reels**: Groups layers by scenes (`scene-1`, `scene-2`...) and details global audio/visual components.
+- Compiles these details into an elegant, styled HTML file (`layer_info_<PostID>.html`) with precise character constraints and instant edit command syntax templates.
+- Delivers the HTML document to Telegram.
 
 ---
 
@@ -245,6 +291,8 @@ The entire system is driven by a single Google Spreadsheet with 8 interconnected
      - `Content Planning Engine (Weekly - 21 Pieces).json`
      - `Visual Creation Engine (Weekly Batch - Templated.io).json`
      - `Telegram Content Approval Bot.json`
+     - `Content Plan Editor.json`
+     - `Template Layer Info.json`
      - `Publishing Engine (Auto-Publish Feed Posts).json`
      - `Quality Control Agent (Daily + Weekly Analytics).json`
 
@@ -318,6 +366,8 @@ Instagram-Content-Automation-Angela/
 ├── Content Planning Engine (Weekly - 21 Pieces).json    # AI content generation workflow
 ├── Visual Creation Engine (Weekly Batch - Templated.io).json  # Visual rendering workflow
 ├── Telegram Content Approval Bot.json                    # Human review interface
+├── Content Plan Editor.json                             # Telegram surgical AI editing bot
+├── Template Layer Info.json                             # Placid template schema query tool
 ├── Publishing Engine (Auto-Publish Feed Posts).json       # Instagram publishing workflow
 ├── Quality Control Agent (Daily + Weekly Analytics).json  # Performance tracking workflow
 ├── Sheet Structure For automation                        # Google Sheet schema documentation

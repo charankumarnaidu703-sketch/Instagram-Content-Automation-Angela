@@ -1,0 +1,438 @@
+{
+  "name": "Template Layer Info",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "callback_query",
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "bff8d310-6a20-42b2-a4c1-f4c70a82e101",
+      "name": "Telegram Trigger1",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1008,
+        912
+      ],
+      "webhookId": "b5e8c1f9-0380-41ea-9526-4d9ff582f6e6",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse incoming Telegram update for Layer Info workflow\nconst body = $input.first().json;\nlet action = 'ignore';\nlet postId = '';\nlet chatId = '';\n\n// 1. Handle callback_query: layer_info|PostID\nif (body.callback_query) {\n  const data = body.callback_query.data || '';\n  if (data.startsWith('layer_info')) {\n    action = 'prompt';\n    postId = data.split('|')[1] || '';\n    chatId = String(body.callback_query.message?.chat?.id || '');\n  }\n}\n\n// 2. Handle text message: ALL or TEMPLATEINFO <PostID>\nif (body.message && body.message.text) {\n  const text = body.message.text.trim();\n  const upper = text.toUpperCase();\n  chatId = String(body.message.chat?.id || '');\n\n  if (upper === 'ALL') {\n    action = 'fetch';\n    postId = '';\n  } else if (upper.startsWith('TEMPLATEINFO')) {\n    action = 'fetch';\n    const parts = text.split(/\\s+/);\n    postId = parts[1] || '';\n  }\n}\n\nreturn [{ json: { action, postId, chatId } }];\n"
+      },
+      "id": "8ef1f85e-5534-4a67-8242-95a3b185b6a2",
+      "name": "Parse Layer Command1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "prompt",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "li-sw-1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Prompt"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "fetch",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "li-sw-2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Fetch"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "c47ee755-79bd-4440-8229-5a4897c86be8",
+      "name": "Route Layer Action1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -560,
+        896
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "📋 *Template Layer Info*\n\nWhat would you like to see?\n\n🔹 Type `ALL` → Layer info for *all* posts\n🔹 Type `TemplateInfo <PostID>` → Layer info for a specific post\n\n_Example: `TemplateInfo SI-001`_",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "db69dc73-5e0f-4318-ae6b-1804e9bf3c87",
+      "name": "TG Send Prompt1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        720
+      ],
+      "webhookId": "bd6a9c7e-2426-4e5c-82b9-53e3b545399c",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "⏳ Fetching template layers... one moment!",
+        "additionalFields": {}
+      },
+      "id": "96da9d4f-d226-478b-bf87-311b24e5b581",
+      "name": "TG Fetching Status1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        912
+      ],
+      "webhookId": "b4031f87-d14e-4f5f-bac9-c61bc1bf19bd",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender"
+        },
+        "options": {}
+      },
+      "id": "56480144-59fc-4351-8e2f-eb1c5c884587",
+      "name": "Read Calendar for Layers1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -112,
+        912
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "template",
+        "returnAll": true,
+        "additionalFields": {}
+      },
+      "id": "dc047098-863d-48fa-a37e-4e74f420c051",
+      "name": "Fetch Templates for Layers1",
+      "type": "n8n-nodes-placid.placid",
+      "typeVersion": 1,
+      "position": [
+        112,
+        912
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "placidApi": {
+          "id": "Amt8FHm0CG8hpNdq",
+          "name": "Placid account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══ BUILD LAYER DOCUMENT (HTML — bold/italic formatted) ═══\nconst routeData = $('Parse Layer Command1').first().json;\nconst postId = routeData.postId || '';\nconst chatId = routeData.chatId || '';\nconst mode = postId ? 'single' : 'all';\n\nconst cal = $('Read Calendar for Layers1').all().map(i => i.json);\nconst templates = $('Fetch Templates for Layers1').all().map(i => i.json);\n\n// ── Filter posts ──\nlet posts = [];\nif (mode === 'single') {\n  const found = cal.find(r => r.PostID === postId);\n  if (found) posts = [found];\n} else {\n  posts = cal.filter(r => r.PreferredTemplate || r['Preferred Template']);\n}\n\nif (posts.length === 0) {\n  const errMsg = mode === 'single'\n    ? `❌ Post ID \\`${postId}\\` not found or has no template assigned.`\n    : '❌ No posts with templates found in the calendar.';\n  return [{ json: { chatId, error: true, errorMsg: errMsg } }];\n}\n\n// ── Helper: strip template name suffixes ──\nfunction getBaseName(name) {\n  return name\n    .replace(/\\s*\\(\\s*page[-\\s]*\\d+\\s*\\)/gi, '')\n    .replace(/\\s*\\(\\s*slide[-\\s]*\\d+\\s*\\)/gi, '')\n    .replace(/\\s*\\(\\s*scene[-\\s]*\\d+\\s*\\)/gi, '')\n    .replace(/\\s*\\(Id:[^)]+\\)/i, '')\n    .trim();\n}\n\n// ── Helper: find matching templates ──\nfunction findTemplates(templateName, contentType, tplId) {\n  const baseName = getBaseName(templateName);\n  const baseNameLower = baseName.toLowerCase();\n  let matched = [];\n\n  if (contentType.includes('carousel')) {\n    matched = templates.filter(t => {\n      const tName = (t.title || t.name || '').trim().toLowerCase();\n      return tName.startsWith(baseNameLower);\n    });\n  } else if (contentType.includes('reel')) {\n    const m = templates.find(t => {\n      const tName = (t.title || t.name || '').trim().toLowerCase();\n      return tName === baseNameLower || tName.startsWith(baseNameLower);\n    });\n    if (m) matched = [m];\n  } else {\n    if (tplId) {\n      const m = templates.find(t => (t.uuid || t.id) === tplId);\n      if (m) matched = [m];\n    }\n    if (matched.length === 0) {\n      const m = templates.find(t => {\n        const tName = (t.title || t.name || '').trim().toLowerCase();\n        return tName === baseNameLower;\n      });\n      if (m) matched = [m];\n    }\n  }\n  return matched;\n}\n\n// ── HTML helpers ──\nconst b  = (s) => `<b>${s}</b>`;\nconst i  = (s) => `<i>${s}</i>`;\nconst bi = (s) => `<b><i>${s}</i></b>`;\nconst code = (s) => `<code>${s}</code>`;\nconst hr  = () => `<hr style=\"border:none;border-top:1px solid #ccc;margin:10px 0;\">`;\nconst div = (s, style='') => `<div${style ? ` style=\"${style}\"` : ''}>${s}</div>`;\n\n// ── Build HTML document ──\nlet html = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<style>\n  body { font-family: Arial, sans-serif; font-size: 13px; color: #222; margin: 24px; line-height: 1.6; }\n  h1 { font-size: 18px; color: #1a1a2e; margin-bottom: 4px; }\n  h2 { font-size: 15px; color: #2c2c54; margin: 20px 0 4px; border-bottom: 2px solid #ddd; padding-bottom: 4px; }\n  h3 { font-size: 13px; color: #3d3d80; margin: 14px 0 4px; }\n  .meta { color: #888; font-size: 12px; margin-bottom: 16px; }\n  .label-text  { background: #e8f4fd; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #1565c0; display: inline-block; margin-bottom: 4px; }\n  .label-image { background: #fce8e6; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #b71c1c; display: inline-block; margin-bottom: 4px; }\n  .layer-row { margin: 4px 0 4px 16px; }\n  .url { color: #1a73e8; word-break: break-all; font-style: italic; font-size: 12px; }\n  .cmd-box { background: #f5f5f5; border-left: 3px solid #aaa; padding: 6px 12px; margin: 8px 0; font-family: monospace; font-size: 12px; color: #333; }\n  .warn { color: #c62828; font-weight: bold; }\n  .slide-header { background: #f0f4ff; border-left: 3px solid #3949ab; padding: 4px 10px; margin: 10px 0 6px; font-weight: bold; font-size: 13px; color: #1a237e; }\n  .post-block { border: 1px solid #ddd; border-radius: 6px; padding: 14px 18px; margin: 18px 0; background: #fafafa; }\n  .tip { color: #555; font-size: 11px; font-style: italic; }\n</style>\n</head>\n<body>\n<h1>📋 Template Layer Info</h1>\n<p class=\"meta\"><i>Generated: ${new Date().toISOString().replace('T', ' ').substring(0, 19)}</i></p>\n`;\n\nconst skipNames = ['vector shape', 'shape', 'vector', 'divider', 'line', 'decorator'];\n\nfor (const post of posts) {\n  const pid          = post.PostID || '';\n  const contentType  = (post.ContentType || '').toLowerCase().replace(/\\s+/g, '_');\n  const templateName = post.PreferredTemplate || post['Preferred Template'] || '';\n  const tplId        = post.PreferredTemplateId || '';\n  const layerUrlsRaw = post.Layer_URLs || '{}';\n  let existingUrls   = {};\n  try { existingUrls = JSON.parse(layerUrlsRaw); } catch(e) {}\n\n  const matched = findTemplates(templateName, contentType, tplId);\n\n  html += `<div class=\"post-block\">`;\n  html += `<h2>📌 POST: ${b(pid)} <span style=\"font-weight:normal;font-size:12px;color:#666;\">(${contentType || 'unknown'})</span></h2>`;\n  html += `<p>🎨 ${b('Template:')} ${i(templateName || '(none)')}</p>`;\n\n  // ── Render layers for a single template ──\n  function renderLayers(layers, urlMap) {\n    const textL = [], imgL = [];\n    for (const layer of (layers || [])) {\n      const nm = layer.name || '';\n      if (skipNames.some(sk => nm.toLowerCase().includes(sk))) continue;\n      if (layer.type === 'text' || layer.type === 'textbox') {\n        const cm = nm.match(/\\(Chars:(\\d+)\\)/i);\n        textL.push({ name: nm, max: cm ? parseInt(cm[1]) : null });\n      } else if (layer.type === 'picture' || layer.type === 'image') {\n        imgL.push({ name: nm, url: urlMap[nm] || '(none)' });\n      }\n    }\n    let out = '';\n    if (textL.length) {\n      out += `<span class=\"label-text\">TEXT LAYERS</span>`;\n      textL.forEach((l, idx) => {\n        out += `<div class=\"layer-row\">${idx + 1}. ${b(l.name)}`;\n        if (l.max) out += ` ${i(`(max ${l.max} chars)`)}`;\n        out += `</div>`;\n      });\n    }\n    if (imgL.length) {\n      out += `<span class=\"label-image\">IMAGE LAYERS</span>`;\n      imgL.forEach((l, idx) => {\n        out += `<div class=\"layer-row\">${idx + 1}. ${b(l.name)}<br>`;\n        out += `&nbsp;&nbsp;&nbsp;Current URL: <span class=\"url\">${l.url}</span></div>`;\n      });\n    }\n    return out;\n  }\n\n  if (matched.length === 0) {\n    html += `<p class=\"warn\">⚠️ No matching Placid template found!</p>`;\n\n  } else if (contentType.includes('carousel')) {\n    const sorted = matched.map(t => {\n      const tName = (t.title || t.name || '').trim();\n      const pm    = tName.match(/\\(\\s*(?:page|slide)[-\\s]*(\\d+)\\s*\\)/i);\n      return { template: t, pageNum: pm ? parseInt(pm[1]) : 999, tName };\n    }).sort((a, b) => a.pageNum - b.pageNum);\n\n    for (const s of sorted) {\n      html += `<div class=\"slide-header\">SLIDE ${s.pageNum}: ${s.tName}</div>`;\n      html += renderLayers(s.template.layers, existingUrls);\n    }\n\n  } else if (contentType.includes('reel')) {\n    const allLayers = matched[0].layers || [];\n    const pages     = {};\n    for (const layer of allLayers) {\n      const nm = layer.name || '';\n      if (skipNames.some(sk => nm.toLowerCase().includes(sk))) continue;\n      const pm = nm.toLowerCase().match(/page[-\\s]*(\\d+)/i);\n      const pn = pm ? parseInt(pm[1]) : 0;\n      if (!pages[pn]) pages[pn] = [];\n      pages[pn].push(layer);\n    }\n    for (const p of Object.keys(pages).map(Number).sort((a, b) => a - b)) {\n      const label = p === 0 ? 'GLOBAL LAYERS' : `SCENE ${p}`;\n      html += `<div class=\"slide-header\">${label}</div>`;\n      html += renderLayers(pages[p], existingUrls);\n    }\n\n  } else {\n    html += renderLayers(matched[0].layers, existingUrls);\n  }\n\n  // ── Edit commands ──\n  html += `<h3>📝 Edit Commands</h3>`;\n  html += `<div class=\"cmd-box\">`;\n  if (contentType.includes('carousel')) {\n    html += `${b('IMAGE')} ${pid} SLIDE N LAYER N ${i('&lt;url&gt;')}<br>`;\n    html += `${b('TEXT')} ${pid} SLIDE N ${i('&lt;new text&gt;')}`;\n  } else if (contentType.includes('reel')) {\n    html += `${b('IMAGE')} ${pid} SCENE N LAYER N ${i('&lt;url&gt;')}<br>`;\n    html += `${b('TEXT')} ${pid} SCENE N ${i('&lt;new text&gt;')}`;\n  } else {\n    html += `${b('IMAGE')} ${pid} ${i('&lt;url&gt;')}<br>`;\n    html += `${b('TEXT')} ${pid} ${i('&lt;new text&gt;')}`;\n  }\n  html += `</div>`;\n  html += `<p class=\"tip\">💡 Use the ${b('exact layer names')} shown above when editing.</p>`;\n  html += `</div>`;\n}\n\nhtml += `</body></html>`;\n\n// ── Output as .html (Google Docs opens this with full formatting) ──\nconst fileName   = mode === 'single' ? `layer_info_${postId}.html` : 'layer_info_all_posts.html';\nconst fileBuffer = Buffer.from(html, 'utf-8');\n\nreturn [{\n  json: { chatId, fileName },\n  binary: {\n    data: {\n      data: fileBuffer.toString('base64'),\n      mimeType: 'text/html; charset=utf-8',\n      fileName,\n      fileExtension: 'html',\n      fileSize: fileBuffer.length\n    }\n  }\n}];"
+      },
+      "id": "5fed8a59-2197-4c4c-9746-49d34dc6b376",
+      "name": "Build Layer Document1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "li-err",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "096e2f34-d626-4d11-9003-2f6dc1199e0c",
+      "name": "IF Error1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.errorMsg }}",
+        "additionalFields": {}
+      },
+      "id": "c2e0bdfc-d977-42d3-8cbe-4427fa588699",
+      "name": "TG Send Error1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1200,
+        720
+      ],
+      "webhookId": "20492ebc-6e8b-419b-9fe6-3f612adf8d01",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $json.chatId }}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "📋 Template Layer Info — use this to plan your edits!\n\n💡 Tip: Use the exact layer names when editing."
+        }
+      },
+      "id": "544f5bff-9cf6-4d0e-a84a-ec114725d8ab",
+      "name": "TG Send Layer Document1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        1008
+      ],
+      "webhookId": "dd5ca470-ba6f-40e7-9ca0-e505f0d57c69",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "853e256d-c14e-4976-9b66-800bbaa08681",
+      "name": "No Operation1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        1168
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Parse Layer Command1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Layer Command1": {
+      "main": [
+        [
+          {
+            "node": "Route Layer Action1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Layer Action1": {
+      "main": [
+        [
+          {
+            "node": "TG Send Prompt1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG Fetching Status1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG Fetching Status1": {
+      "main": [
+        [
+          {
+            "node": "Read Calendar for Layers1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar for Layers1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Templates for Layers1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Templates for Layers1": {
+      "main": [
+        [
+          {
+            "node": "Build Layer Document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Layer Document1": {
+      "main": [
+        [
+          {
+            "node": "IF Error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Error1": {
+      "main": [
+        [
+          {
+            "node": "TG Send Error1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG Send Layer Document1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "30b9db13-467a-4f96-8670-d98f2ce06946",
+  "meta": {
+    "instanceId": "9301a0d2cb4f0d3ce4f42b58554435fa7b894db5f60eb53bd5117fd5b924b581"
+  },
+  "id": "NQKmgiW8juOMLQ8X",
+  "tags": []
+}

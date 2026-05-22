@@ -1,0 +1,976 @@
+{
+  "name": "Content Plan Editor",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "callback_query",
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "09438777-3539-436b-9fcc-61576fe890ee",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -752,
+        544
+      ],
+      "webhookId": "cpe-trigger-wh-001",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse incoming Telegram update for Content Plan Editor\nconst body = $input.first().json;\nlet action = 'ignore';\nlet postId = '';\nlet changes = '';\nlet chatId = '';\n\n// 1. Handle callback_query: edit_plan\nif (body.callback_query) {\n  const data = body.callback_query.data || '';\n  if (data === 'edit_plan') {\n    action = 'prompt';\n    chatId = String(body.callback_query.message?.chat?.id || '');\n  }\n}\n\n// 2. Handle text message\nif (body.message && body.message.text) {\n  const text = body.message.text.trim();\n  chatId = String(body.message.chat?.id || '');\n\n  // PostID pattern: e.g. CAR-20260330-001, REL-20260331-001\n  const postIdPattern = /^Change\\s+([A-Z]+-\\d{8}-\\d+)\\s*$/i;\n  const changePattern = /^Change\\s+(.+)$/i;\n\n  const lines = text.split('\\n').map(l => l.trim()).filter(Boolean);\n  const results = [];\n  let currentPostId = null;\n\n  for (const line of lines) {\n    const postIdMatch = line.match(postIdPattern);\n    if (postIdMatch) {\n      // This line is a PostID line\n      currentPostId = postIdMatch[1].trim();\n    } else {\n      const changeMatch = line.match(changePattern);\n      if (changeMatch && currentPostId) {\n        // This line is the change instruction for the current PostID\n        results.push({\n          action: 'edit',\n          postId: currentPostId,\n          changes: changeMatch[1].trim(),\n          chatId\n        });\n        currentPostId = null;\n      }\n    }\n  }\n\n  if (results.length > 0) {\n    return results.map(r => ({ json: r }));\n  }\n}\n\n// Fallback return (handles: ignore, prompt, unmatched message)\nreturn [{ json: { action, postId, changes, chatId } }];"
+      },
+      "id": "5849d704-81f3-493a-917f-c4c1552e9999",
+      "name": "Parse Edit Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "prompt",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e432a9eb-4959-4887-8f6d-b40dc2c582de"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "prompt"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "edit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "fdc6452e-7731-4760-a645-ca23adb42df2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "edit"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "7f386ad8-a096-4ec3-9ef0-bf1a6deea446",
+      "name": "Route Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -80,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Edit Command').item.json.chatId }}",
+        "text": "✏️ *Content Plan Editor*\n\nTo edit a post, send:\n`Change <PostID> <your changes>`\n\n*Examples:*\n• `Change IMG-20260331-001 change topic to hair care tips`\n• `Change CAR-20260401-001 make caption shorter, feature Deep Tissue Massage`\n• `Change REL-20260402-001 change hook to a question style`\n\n💡 You can find PostIDs in the schedule document sent earlier.\n\n📌 *Tip:* Be specific about what you want changed — the AI will keep everything else the same.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "d70598a4-74bc-4f91-8bc5-2245649a9e01",
+      "name": "TG Send Instructions",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -112
+      ],
+      "webhookId": "90888892-df84-44c7-8bd5-0bebe5b181b8",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Edit Command').item.json.chatId }}",
+        "text": "=⏳ Processing your edit for {{ $('Parse Edit Command').item.json.postId }}...\n\n_Reading existing data, applying your changes via AI, and updating the calendar._",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "52ebcc87-bb8d-4e2d-b34a-8f2006d6ce86",
+      "name": "TG Processing Status",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        80
+      ],
+      "webhookId": "a49c88c4-98ff-4ed3-bd39-497933a6e066",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Config",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "1ae71667-2273-43f5-952f-b2f5dc04184b",
+      "name": "Read Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        368,
+        80
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "options": {}
+      },
+      "id": "115680f1-9bcc-4b0d-98d6-7d6c79dfcd87",
+      "name": "Read Calendar",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        592,
+        80
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 143028096,
+          "mode": "list",
+          "cachedResultName": "Product List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=143028096"
+        },
+        "options": {}
+      },
+      "id": "c8ac8fe6-9bbe-4b1e-acd9-b5f144b00928",
+      "name": "Read Products",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        816,
+        80
+      ],
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build AI prompt for editing a specific post\n const parsed = $('Loop Over Items').first().json;\nconst postId = parsed.postId;\nconst changes = parsed.changes;\nconst chatId = parsed.chatId;\n\n// Read the existing post from calendar\nconst calRows = $('Read Calendar').all().map(i => i.json);\nconst existingPost = calRows.find(r => r.PostID === postId);\nif (!existingPost) {\n  return [{ json: {\n    chatId, error: true,\n    errorMsg: `❌ Post ID \\`${postId}\\` not found in the Content Calendar.`\n  }}];\n}\n\n// Read config\nconst cfg = $('Read Config').first().json;\nconst lang = cfg.contentlanguage || cfg['Content Language'] || 'English';\nconst tone = cfg.tone || 'Professional';\nconst audience = cfg.audience || 'General';\nconst blacklist = cfg.blacklistWords || '';\nconst minCaptionWords = cfg.minCaptionWords || 80;\nconst maxCaptionWords = cfg.maxCaptionWords || 200;\nconst maxHookChars = cfg.maxHookChars || 100;\nconst minHashtags = cfg.minHashtags || 10;\nconst maxHashtags = cfg.maxHashtags || 20;\n\n// Read products\nconst products = $('Read Products').all().map(i => i.json)\n  .filter(p => p.Status === 'Active' || p.Status === 'Seasonal');\nlet productContext = '';\nif (products.length > 0) {\n  productContext = '\\n\\nAVAILABLE PRODUCTS:\\n';\n  products.forEach((p, i) => {\n    productContext += `${i+1}. ${p.Name} (${p.Category}) - ${p.Description || ''}\\n`;\n  });\n}\n\n// Build the existing post as a formatted block\nconst existingFields = JSON.stringify(existingPost, null, 2);\n\n// ─── SYSTEM PROMPT ───────────────────────────────────────────────────────────\nconst systemPrompt = `You are a senior social media strategist editing an existing Instagram post for the brand ${cfg.brandName || 'Beauty Brand'}.\n\nBRAND VOICE:\n- Tone: ${tone}\n- Avoid casual language, slang, or these forbidden words: ${blacklist || 'none'}\n\nTARGET AUDIENCE: ${audience}\n\nCONTENT LANGUAGE: ${lang} — ALL generated or modified text MUST be in ${lang}.\n\n═══════════════════════════════════════════════════════\n⚠️  CRITICAL EDITING RULE — READ BEFORE ANYTHING ELSE:\n═══════════════════════════════════════════════════════\n\nYou are an EDITOR, not a content creator. Your job is SURGICAL.\n\n1. IDENTIFY which specific fields the client asked to change.\n2. MODIFY only those exact fields.\n3. For EVERY other field: copy the original value EXACTLY, character-for-character — ZERO changes, no rephrasing, no improving, no \"optimizing.\"\n\nThis means:\n- If only Caption is requested → Topic, Hook, CTA, Hashtags, VisualBrief stay FROZEN.\n- If only Hook is requested → Caption, Topic, etc. stay FROZEN.\n- NEVER assume you should \"also improve\" something that was not requested.\n- NEVER paraphrase or enhance a field that was not explicitly mentioned in the client's request.\n\nFIELD CONSTRAINTS (apply ONLY to fields being modified):\n- Caption: ${minCaptionWords}–${maxCaptionWords} words\n- Hook: max ${maxHookChars} characters\n- Hashtags: ${minHashtags}–${maxHashtags} tags, space-separated\n- All modified text must be in ${lang}\n\nReturn ONLY a valid JSON object with ALL fields. No text before or after the JSON.`;\n\n// ─── USER PROMPT ─────────────────────────────────────────────────────────────\nconst userPrompt = `You are editing an existing Instagram post. A client has requested specific changes.\n\nEXISTING POST DATA (treat every field here as the ground truth):\n${existingFields}\n\nCLIENT REQUESTED CHANGES:\n${changes}\n\nYOUR TASK:\n1. Read the client request carefully and identify ONLY the fields that need to change.\n2. For fields that need to change: generate new content following brand voice, constraints, and the client's intent.\n3. For ALL other fields: copy the value from EXISTING POST DATA above — verbatim, unchanged.\n\nFIELDS THAT MUST ALWAYS STAY FROZEN (never modify these under any circumstances):\n- PostID\n- ContentType\n- ScheduledDate\n- ScheduledTime\n- Day\n- Pillar\n- PreferredTemplate\n- PreferredTemplateId\n\nFIELDS THAT ARE FROZEN UNLESS THE CLIENT EXPLICITLY MENTIONED THEM:\n- Topic       → only change if client said \"change topic\" or \"change the title\"\n- Hook        → only change if client said \"change hook\" or \"change the opening line\"\n- CTA         → only change if client said \"change CTA\" or \"change call to action\"\n- Hashtags    → only change if client said \"change hashtags\"\n- VisualBrief → only change if client said \"change visual\" or \"change the brief\"\n- ProductFeatured → only change if client said \"change product\"\n${productContext}\nReturn ONLY this JSON object with ALL fields filled. No text before or after:\n{\n  \"PostID\": \"${postId}\",\n  \"ContentType\": \"\",\n  \"ScheduledDate\": \"\",\n  \"ScheduledTime\": \"\",\n  \"Day\": \"\",\n  \"Topic\": \"\",\n  \"Hook\": \"\",\n  \"Caption\": \"\",\n  \"Hashtags\": \"space-separated hashtags string\",\n  \"CTA\": \"\",\n  \"VisualBrief\": \"\",\n  \"ProductFeatured\": \"\",\n  \"Pillar\": \"\",\n  \"PreferredTemplate\": \"\",\n  \"PreferredTemplateId\": \"\",\n  \"AnalyticsInsight\": \"Explain ONLY what was changed and why — do not mention fields that were preserved.\"\n}`;\n\n// ─── ASSEMBLE OPENAI BODY ─────────────────────────────────────────────────────\nconst oaiBody = JSON.stringify({\n  model: 'gpt-4o',\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user', content: userPrompt }\n  ],\n  temperature: 0.5,\n  max_tokens: 2000\n});\n\nreturn [{ json: {\n  chatId,\n  postId,\n  changes,\n  existingPost,\n  openAiBody: oaiBody,\n  systemPrompt,\n  userPrompt,\n  error: false\n}}];"
+      },
+      "id": "a6bace94-574b-4477-94e2-151a3f938276",
+      "name": "Build Edit Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "cpe-if-err-cond",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2053ae87-f8d7-43ed-affe-c3f04e673aba",
+      "name": "IF Prompt Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.errorMsg }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "d555f5d9-bb02-43dc-b765-2cc839a83a3d",
+      "name": "TG Send Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        -16
+      ],
+      "webhookId": "503305de-5ba7-4577-89cc-41772dee2a30",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and prepare for sheet update\nconst inp = $input.first().json;\nconst editData = $('Build Edit Prompt').first().json;\nconst chatId = editData.chatId;\nconst postId = editData.postId;\nconst existingPost = editData.existingPost;\n\nlet txt = '';\n\nif (inp.choices) {\n  // OpenAI / gpt-4o format\n  txt = inp.choices[0].message.content;\n} else if (inp.candidates) {\n  // Raw Gemini REST API format\n  txt = inp.candidates[0].content.parts[0].text;\n} else if (inp.content && inp.content.parts) {\n  // n8n \"Message a model\" Gemini node format\n  txt = inp.content.parts[0].text;\n} else {\n  return [{ json: { chatId, error: true, errorMsg: '❌ AI returned no valid response.' }}];\n}\n\n// Clean markdown code fences\nconst tick = String.fromCharCode(96);\ntxt = txt\n  .replace(new RegExp(tick + '{3}json\\\\s*', 'g'), '')\n  .replace(new RegExp(tick + '{3}\\\\s*', 'g'), '')\n  .trim();\n\nlet updatedPost;\ntry {\n  updatedPost = JSON.parse(txt);\n  if (Array.isArray(updatedPost)) updatedPost = updatedPost[0];\n} catch(e) {\n  return [{ json: {\n    chatId, error: true,\n    errorMsg: `❌ Failed to parse AI response: ${e.message}`\n  }}];\n}\n\n// Ensure PostID is preserved\nupdatedPost.PostID = postId;\nupdatedPost.Status = 'edited';\nupdatedPost.EditedAt = new Date().toISOString();\n\n// Build before/after report\nlet doc = '✏️ CONTENT PLAN EDIT REPORT\\n';\ndoc += `Post ID: ${postId}\\n`;\ndoc += `Edited: ${new Date().toISOString().replace('T', ' ').substring(0, 19)}\\n`;\ndoc += '═══════════════════════════════════════\\n\\n';\ndoc += '📝 CHANGES REQUESTED:\\n';\ndoc += `${editData.changes}\\n\\n`;\ndoc += '─────────────────────────────────\\n\\n';\n\nconst compareFields = ['Topic', 'Hook', 'Caption', 'Hashtags', 'CTA',\n  'VisualBrief', 'ProductFeatured', 'Pillar', 'PreferredTemplate', 'AnalyticsInsight'];\n\ncompareFields.forEach(field => {\n  const oldVal = (existingPost[field] || existingPost[field.replace(/([A-Z])/g, ' $1').trim()] || '').toString();\n  const newVal = (updatedPost[field] || '').toString();\n  if (oldVal !== newVal) {\n    doc += `📌 ${field}:\\n`;\n    doc += `  BEFORE: ${oldVal.substring(0, 200)}${oldVal.length > 200 ? '...' : ''}\\n`;\n    doc += `  AFTER:  ${newVal.substring(0, 200)}${newVal.length > 200 ? '...' : ''}\\n\\n`;\n  }\n});\n\ndoc += '\\n═══════════════════════════════════════\\n';\ndoc += '✅ Post has been updated in the Content Calendar!\\n';\n\nconst fileName = `edit_report_${postId}.txt`;\n\n// btoa with UTF-8 support (Buffer not available in n8n Task Runner)\nconst base64Data = btoa(unescape(encodeURIComponent(doc)));\nconst fileSize = doc.length;\n\n// Prepare the sheet update row\nconst sheetRow = {\n  PostID: updatedPost.PostID,\n  ContentType: updatedPost.ContentType || existingPost.ContentType,\n  ScheduledDate: updatedPost.ScheduledDate || existingPost.ScheduledDate,\n  ScheduledTime: updatedPost.ScheduledTime || existingPost.ScheduledTime,\n  Day: updatedPost.Day || existingPost.Day,\n  Topic: updatedPost.Topic || existingPost.Topic,\n  Hook: updatedPost.Hook || existingPost.Hook,\n  Caption: updatedPost.Caption || existingPost.Caption,\n  Hashtags: updatedPost.Hashtags || existingPost.Hashtags,\n  CTA: updatedPost.CTA || existingPost.CTA,\n  VisualBrief: updatedPost.VisualBrief || existingPost.VisualBrief,\n  'Product Featured': updatedPost.ProductFeatured || existingPost.ProductFeatured || existingPost['Product Featured'] || '',\n  Pillar: updatedPost.Pillar || existingPost.Pillar,\n  'Preferred Template': updatedPost.PreferredTemplate || existingPost.PreferredTemplate || existingPost['Preferred Template'] || '',\n  PreferredTemplateId: updatedPost.PreferredTemplateId || existingPost.PreferredTemplateId,\n  Status: 'edited',\n  AnalyticsInsight: updatedPost.AnalyticsInsight || '',\n  NeedsReview: false,\n  ReviewFlags: '',\n  AISource: 'edit-gemini',\n  EditedAt: new Date().toISOString()\n};\n\nreturn [{\n  json: {\n    chatId,\n    postId,\n    sheetRow,\n    error: false,\n    fileName\n  },\n  binary: {\n    data: {\n      data: base64Data,\n      mimeType: 'text/plain; charset=utf-8',\n      fileName,\n      fileExtension: 'txt',\n      fileSize: fileSize\n    }\n  }\n}];"
+      },
+      "id": "be220119-e33d-476b-9144-cf240ea37b10",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cpe-if-err2-cond",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5df7ec80-0cba-4974-8ee3-5a1960e9f689",
+      "name": "IF AI Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2064,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.errorMsg }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "95b273ba-f95f-4139-9252-ed5d612e92f3",
+      "name": "TG Send AI Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2288,
+        272
+      ],
+      "webhookId": "859d9be0-6556-493f-ba2c-1b843642fa97",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract sheet row for Google Sheets update\nconst data = $('Parse AI Response').first().json;\nreturn [{ json: data.sheetRow }];\n"
+      },
+      "id": "52a6da78-c52f-45a9-94a4-4b30a09957f7",
+      "name": "Prepare Update Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY",
+          "mode": "list",
+          "cachedResultName": "Instagram Content Automation Data(For Angela)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 669737308,
+          "mode": "list",
+          "cachedResultName": "Content Calender",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1fkeMq8QIVRM1p03OQVFjJ_lfHSx22QfF1St3Zf_wCWY/edit#gid=669737308"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PostID": "={{ $json.PostID }}",
+            "Topic": "={{ $json.Topic }}",
+            "Hook": "={{ $json.Hook }}",
+            "Caption": "={{ $json.Caption }}",
+            "Hashtags": "={{ $json.Hashtags }}",
+            "CTA": "={{ $json.CTA }}",
+            "VisualBrief": "={{ $json.VisualBrief }}",
+            "Product Featured": "={{ $json['Product Featured'] }}",
+            "Pillar": "={{ $json.Pillar }}",
+            "Preferred Template": "={{ $json['Preferred Template'] }}",
+            "PreferredTemplateId": "={{ $json.PreferredTemplateId }}",
+            "Status": "={{ $json.Status }}",
+            "AnalyticsInsight": "={{ $json.AnalyticsInsight }}",
+            "NeedsReview": "={{ $json.NeedsReview }}",
+            "ReviewFlags": "={{ $json.ReviewFlags }}",
+            "AISource": "={{ $json.AISource }}"
+          },
+          "matchingColumns": [
+            "PostID"
+          ],
+          "schema": [
+            {
+              "id": "PostID",
+              "displayName": "PostID",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hook",
+              "displayName": "Hook",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Hashtags",
+              "displayName": "Hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CTA",
+              "displayName": "CTA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "VisualBrief",
+              "displayName": "VisualBrief",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Product Featured",
+              "displayName": "Product Featured",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Pillar",
+              "displayName": "Pillar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Preferred Template",
+              "displayName": "Preferred Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PreferredTemplateId",
+              "displayName": "PreferredTemplateId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AnalyticsInsight",
+              "displayName": "AnalyticsInsight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "NeedsReview",
+              "displayName": "NeedsReview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ReviewFlags",
+              "displayName": "ReviewFlags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "AISource",
+              "displayName": "AISource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "b658526b-df2f-4291-9b22-ab3e23ce2c0a",
+      "name": "Update Calendar Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2512,
+        464
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "riwxH3IKwHI87dAQ",
+          "name": "Gsheet Charan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bridge: pull binary from Parse AI Response and chatId\nconst data = $('Parse AI Response').first();\nconst chatId = data.json.chatId;\nconst binaryData = data.binary;\n\nif (!binaryData || !binaryData.data) {\n  return [{ json: { chatId, skip: true } }];\n}\n\nreturn [{\n  json: { chatId },\n  binary: binaryData\n}];\n"
+      },
+      "id": "7ffc8f66-5086-48eb-9087-bdc707cc4e70",
+      "name": "Prepare Report Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2736,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $json.chatId }}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "✅ Post has been updated in the Content Calendar!\n\n📋 See the attached report for a before/after comparison.",
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "aec82456-6ea6-41ed-90b6-355675eba163",
+      "name": "TG Send Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3056,
+        576
+      ],
+      "webhookId": "94341e87-f293-4935-9f85-1579d637aada",
+      "credentials": {
+        "telegramApi": {
+          "id": "tHLJCs5KFXSf0Q9r",
+          "name": "Charan Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "41c7a10f-ce6e-4ea2-bd87-caa55a855732",
+      "name": "No Operation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        144,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.userPrompt }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1488,
+        176
+      ],
+      "id": "2e800aaa-051b-4852-b5c0-f970c59b1f01",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "De92yjgDFXJyu7JL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -304,
+        544
+      ],
+      "id": "8df61e62-a069-4513-95c9-1174cc21ff90",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Edit Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Edit Command": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Action": {
+      "main": [
+        [
+          {
+            "node": "TG Send Instructions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TG Processing Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG Processing Status": {
+      "main": [
+        [
+          {
+            "node": "Read Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Config": {
+      "main": [
+        [
+          {
+            "node": "Read Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Calendar": {
+      "main": [
+        [
+          {
+            "node": "Read Products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Products": {
+      "main": [
+        [
+          {
+            "node": "Build Edit Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Edit Prompt": {
+      "main": [
+        [
+          {
+            "node": "IF Prompt Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Prompt Error": {
+      "main": [
+        [
+          {
+            "node": "TG Send Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "IF AI Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF AI Error": {
+      "main": [
+        [
+          {
+            "node": "TG Send AI Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Update Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Update Row": {
+      "main": [
+        [
+          {
+            "node": "Update Calendar Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Row": {
+      "main": [
+        [
+          {
+            "node": "Prepare Report Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Report Binary": {
+      "main": [
+        [
+          {
+            "node": "TG Send Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Route Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG Send Report": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG Send Error": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TG Send AI Error": {
+      "main": [
+        [
+          {
+            "node": "Route Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "972467a5-6107-4a69-967b-2c09104870ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9301a0d2cb4f0d3ce4f42b58554435fa7b894db5f60eb53bd5117fd5b924b581"
+  },
+  "id": "4GgurV5xHEC2hKTV",
+  "tags": []
+}
